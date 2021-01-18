@@ -44,5 +44,5 @@ public interface ConfigurableStateBackend {
 	 *
 	 * @throws IllegalConfigurationException Thrown if the configuration contained invalid entries.
 	 */
-	StateBackend configure(ReadableConfig config, ClassLoader classLoader) throws IllegalConfigurationException;
+	StateBackend configure(ReadableConfig config, ClassLoader classLoader, String backendType) throws IllegalConfigurationException;
 }

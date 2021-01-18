@@ -249,6 +249,7 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <N> Stream<K> getKeys(String state, N namespace) {
+		LOG.info("HeapKeyedStateBackend: getKeys state {} namespace {}", state, namespace);
 		if (!registeredKVStates.containsKey(state)) {
 			return Stream.empty();
 		}
@@ -272,6 +273,8 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
 		}
 		StateTable<K, N, SV> stateTable = tryRegisterStateTable(
 			namespaceSerializer, stateDesc, getStateSnapshotTransformFactory(stateDesc, snapshotTransformFactory));
+		LOG.info("HeapKeyedStateBackend: createInternalState {} default {} queryable state name {}",
+			stateDesc.getName(), stateDesc.getDefaultValue(), stateDesc.getQueryableStateName());
 		return stateFactory.createState(stateDesc, stateTable, getKeySerializer());
 	}
 

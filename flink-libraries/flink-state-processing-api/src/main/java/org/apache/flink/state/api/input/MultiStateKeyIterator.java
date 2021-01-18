@@ -26,6 +26,7 @@ import org.apache.flink.runtime.state.VoidNamespace;
 import org.apache.flink.runtime.state.VoidNamespaceSerializer;
 import org.apache.flink.util.Preconditions;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -46,14 +47,23 @@ public final class MultiStateKeyIterator<K> implements Iterator<K> {
 
 	private K currentKey;
 
-	public MultiStateKeyIterator(List<? extends StateDescriptor<?, ?>> descriptors, KeyedStateBackend<K> backend) {
+	public MultiStateKeyIterator(
+		List<? extends StateDescriptor<?, ?>> descriptors,
+		KeyedStateBackend<K> backend) {
 		this.descriptors = Preconditions.checkNotNull(descriptors);
 
 		this.backend = Preconditions.checkNotNull(backend);
 
 		this.internal = descriptors
 			.stream()
-			.flatMap(descriptor -> backend.getKeys(descriptor.getName(), VoidNamespace.INSTANCE))
+			.flatMap(descriptor -> {
+				try {
+					return backend.getKeys(descriptor.getName(), VoidNamespace.INSTANCE);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				return null;
+			})
 			.iterator();
 	}
 
@@ -84,7 +94,9 @@ public final class MultiStateKeyIterator<K> implements Iterator<K> {
 
 				state.clear();
 			} catch (Exception e) {
-				throw new RuntimeException("Failed to drop partitioned state from state backend", e);
+				throw new RuntimeException(
+					"Failed to drop partitioned state from state backend",
+					e);
 			}
 		}
 	}
