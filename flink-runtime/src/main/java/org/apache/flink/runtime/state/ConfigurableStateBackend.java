@@ -40,6 +40,7 @@ public interface ConfigurableStateBackend {
 	 *
 	 * @param config The configuration to pick the values from.
 	 * @param classLoader The class loader that should be used to load the state backend.
+	 * @param backendType Type of state backend.
 	 * @return A reconfigured state backend.
 	 *
 	 * @throws IllegalConfigurationException Thrown if the configuration contained invalid entries.

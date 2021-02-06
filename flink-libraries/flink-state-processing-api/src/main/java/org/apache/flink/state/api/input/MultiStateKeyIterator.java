@@ -47,9 +47,7 @@ public final class MultiStateKeyIterator<K> implements Iterator<K> {
 
 	private K currentKey;
 
-	public MultiStateKeyIterator(
-		List<? extends StateDescriptor<?, ?>> descriptors,
-		KeyedStateBackend<K> backend) {
+	public MultiStateKeyIterator(List<? extends StateDescriptor<?, ?>> descriptors, KeyedStateBackend<K> backend) {
 		this.descriptors = Preconditions.checkNotNull(descriptors);
 
 		this.backend = Preconditions.checkNotNull(backend);
@@ -94,9 +92,7 @@ public final class MultiStateKeyIterator<K> implements Iterator<K> {
 
 				state.clear();
 			} catch (Exception e) {
-				throw new RuntimeException(
-					"Failed to drop partitioned state from state backend",
-					e);
+				throw new RuntimeException("Failed to drop partitioned state from state backend", e);
 			}
 		}
 	}
