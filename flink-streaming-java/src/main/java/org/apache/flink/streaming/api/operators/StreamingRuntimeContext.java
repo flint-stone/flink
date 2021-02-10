@@ -111,6 +111,10 @@ public class StreamingRuntimeContext extends AbstractRuntimeUDFContext {
 		this.keyedStateStore = keyedStateStore;
 	}
 
+	public KeyedStateStore getKeyedStateStore() {
+		return keyedStateStore;
+	}
+
 	// ------------------------------------------------------------------------
 
 	/**

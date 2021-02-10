@@ -35,22 +35,39 @@ import org.apache.flink.api.common.functions.RichFunction;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.AggregatingState;
 import org.apache.flink.api.common.state.AggregatingStateDescriptor;
+import org.apache.flink.api.common.state.AsyncValueState;
+import org.apache.flink.api.common.state.AsyncValueStateDescriptor;
+import org.apache.flink.api.common.state.KeyedStateStore;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
+import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.metrics.MetricGroup;
+import org.apache.flink.queryablestate.exceptions.UnknownKvStateIdException;
+import org.apache.flink.runtime.query.UnknownKvStateLocation;
+import org.apache.flink.runtime.state.DefaultKeyedStateStore;
+import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
+import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.types.Value;
 import org.apache.flink.util.Preconditions;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
+import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
  * Rich variant of the {@link AsyncFunction}. As a {@link RichFunction}, it gives access to the
@@ -69,6 +86,8 @@ import java.util.Set;
  */
 @PublicEvolving
 public abstract class RichAsyncFunction<IN, OUT> extends AbstractRichFunction implements AsyncFunction<IN, OUT> {
+
+	protected static final Logger LOG = LoggerFactory.getLogger(RichAsyncFunction.class);
 
 	private static final long serialVersionUID = 3858030061138121840L;
 
@@ -97,7 +116,11 @@ public abstract class RichAsyncFunction<IN, OUT> extends AbstractRichFunction im
 	 * context only supports basic operations which are thread safe. Consequently, state access,
 	 * accumulators, broadcast variables and the distributed cache are disabled.
 	 */
-	private static class RichAsyncFunctionRuntimeContext implements RuntimeContext {
+	public static class RichAsyncFunctionRuntimeContext implements RuntimeContext {
+		private static final Logger LOG = LoggerFactory.getLogger(RichAsyncFunctionRuntimeContext.class);
+
+		private @Nullable KeyedStateStore keyedStateStore;
+
 		private final RuntimeContext runtimeContext;
 
 		RichAsyncFunctionRuntimeContext(RuntimeContext context) {
@@ -165,7 +188,12 @@ public abstract class RichAsyncFunction<IN, OUT> extends AbstractRichFunction im
 
 		@Override
 		public <T> ValueState<T> getState(ValueStateDescriptor<T> stateProperties) {
-			throw new UnsupportedOperationException("State is not supported in rich async functions.");
+
+			KeyedStateStore keyedStateStore = checkPreconditionsAndGetKeyedStateStore(stateProperties);
+			stateProperties.initializeSerializerUnlessSet(getExecutionConfig());
+			ValueState<T> asyncState = keyedStateStore.getState(stateProperties);
+			return asyncState;
+//			throw new UnsupportedOperationException("State is not supported in rich async functions.");
 		}
 
 		@Override
@@ -187,6 +215,30 @@ public abstract class RichAsyncFunction<IN, OUT> extends AbstractRichFunction im
 		public <UK, UV> MapState<UK, UV> getMapState(MapStateDescriptor<UK, UV> stateProperties) {
 			throw new UnsupportedOperationException("State is not supported in rich async functions.");
 		}
+
+		public <T> AsyncValueState<T> getAsyncState(AsyncValueStateDescriptor<T> stateProperties) throws UnknownKvStateLocation {
+			KeyedStateStore keyedStateStore = checkPreconditionsAndGetKeyedStateStore(stateProperties);
+			stateProperties.initializeSerializerUnlessSet(getExecutionConfig());
+			AsyncValueState<T> asyncState = keyedStateStore.getAsyncState(stateProperties);
+			return asyncState;
+		}
+
+		public <T, OUT> ListState<T> getAsyncListState(ListStateDescriptor<T> stateProperties) throws UnknownKvStateLocation {
+			throw new UnknownKvStateLocation("Async states need to be explicitly fetched.");
+		}
+
+		public <T,OUT> ReducingState<T> getAsyncReducingState(ReducingStateDescriptor<T> stateProperties) throws UnknownKvStateLocation {
+			throw new UnknownKvStateLocation("Async states need to be explicitly fetched.");
+		}
+
+		public <IN, ACC, OUT> AggregatingState<IN, OUT> getAsyncAggregatingState(AggregatingStateDescriptor<IN, ACC, OUT> stateProperties) throws UnknownKvStateLocation {
+			throw new UnknownKvStateLocation("Async states need to be explicitly fetched.");
+		}
+
+		public <UK, UV, OUT> MapState<UK, UV> getAsyncMapState(MapStateDescriptor<UK, UV> stateProperties) throws UnknownKvStateLocation {
+			throw new UnknownKvStateLocation("Async states need to be explicitly fetched.");
+		}
+
 
 		@Override
 		public <V, A extends Serializable> void addAccumulator(String name, Accumulator<V, A> accumulator) {
@@ -236,6 +288,20 @@ public abstract class RichAsyncFunction<IN, OUT> extends AbstractRichFunction im
 		@Override
 		public <T, C> C getBroadcastVariableWithInitializer(String name, BroadcastVariableInitializer<T, C> initializer) {
 			throw new UnsupportedOperationException("Broadcast variables are not supported in rich async functions.");
+		}
+
+		private KeyedStateStore checkPreconditionsAndGetKeyedStateStore(StateDescriptor<?, ?> stateDescriptor) {
+			keyedStateStore = ((StreamingRuntimeContext)runtimeContext).getKeyedStateStore();
+			checkNotNull(stateDescriptor, "The state properties must not be null");
+			checkNotNull(keyedStateStore, "Keyed state can only be used on a 'keyed stream', i.e., after a 'keyBy()' operation.");
+
+			if (keyedStateStore==null){
+				LOG.info("RichAsyncFunction checkPreconditionsAndGetKeyedStateStore keyedStateStore null");
+			}
+			else{
+				LOG.info("RichAsyncFunction checkPreconditionsAndGetKeyedStateStore keyedStateStore {}", keyedStateStore);
+			}
+			return keyedStateStore;
 		}
 	}
 

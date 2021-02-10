@@ -225,4 +225,6 @@ public interface TaskMailbox {
 	 * @param runnable the runnable to execute
 	 */
 	void runExclusively(Runnable runnable);
+
+	int size();
 }

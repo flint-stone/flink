@@ -2,6 +2,7 @@ package org.apache.flink.runtime.state.heap.remote;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.state.AggregatingStateDescriptor;
+import org.apache.flink.api.common.state.AsyncValueStateDescriptor;
 import org.apache.flink.api.common.state.FoldingStateDescriptor;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapStateDescriptor;
@@ -119,7 +120,10 @@ public class RemoteHeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K>
 				(RemoteHeapKeyedStateBackend.StateFactory) RemoteHeapReducingState::create),
 			Tuple2.of(
 				FoldingStateDescriptor.class,
-				(RemoteHeapKeyedStateBackend.StateFactory) RemoteHeapFoldingState::create)
+				(RemoteHeapKeyedStateBackend.StateFactory) RemoteHeapFoldingState::create),
+			Tuple2.of(
+				AsyncValueStateDescriptor.class,
+				(RemoteHeapKeyedStateBackend.StateFactory) RemoteHeapAsyncValueState::create)
 		).collect(Collectors.toMap(t -> t.f0, t -> t.f1));
 
 	public RemoteHeapKeyedStateBackend(
