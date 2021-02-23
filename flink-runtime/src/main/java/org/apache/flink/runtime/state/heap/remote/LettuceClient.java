@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -31,6 +33,8 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	private RedisAsyncCommands<byte[], byte[]> commands;
 
 	private ArrayList<RedisFuture<?>> cachedFutures = new ArrayList<>();
+
+	private ByteArrayCodec codec;
 
 	@Override
 	public byte[] get(byte[] key) {
@@ -159,7 +163,8 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	@Override
 	public Collection<String> keys(String predicate) {
 		try {
-			return commands.keys(predicate.getBytes()).toCompletableFuture().get().stream().map(x->x.toString()).collect(
+			Charset charset = Charset.forName("UTF-8");
+			return commands.keys(codec.decodeKey(charset.encode(predicate))).toCompletableFuture().get().stream().map(x-> charset.decode(codec.encodeKey(x)).toString()).collect(
 				Collectors.toSet());
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -220,7 +225,8 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	public void openDB(String host) {
 		RedisURI redisUri = RedisURI.Builder.redis("127.0.0.1", 6379).withPassword("authentication").build();
 		db = RedisClient.create(redisUri);
-		connection = db.connect(new ByteArrayCodec());
+		codec = new ByteArrayCodec();
+		connection = db.connect(codec);
 		commands = connection.async();
 		LOG.info("Connection from Lettuce Client to Redis Cluster {} successful.", host);
 	}

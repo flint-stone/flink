@@ -234,7 +234,7 @@ public class RemoteHeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K>
 		Stream<K> ret = keys.stream().map(key ->
 		{
 			try {
-				LOG.trace(
+				LOG.debug(
 					"RemoteKeyedStateBackend: getKeys deserialize key {} {} {} {}",
 					key,
 					key.getBytes(),

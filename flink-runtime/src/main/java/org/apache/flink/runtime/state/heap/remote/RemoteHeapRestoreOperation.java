@@ -190,10 +190,10 @@ public class RemoteHeapRestoreOperation<K> implements RestoreOperation<Void> {
 
 		LOG.trace("RemoteHeapRestoreOperation: Start Jedis to server: {}", remoteStorageHost);
 		// open DB
-		syncDBClient = new JedisSyncClient(); //new LettuceClusterClient();
+		syncDBClient = new LettuceClient();//new JedisSyncClient(); //new LettuceClient();
 		syncDBClient.openDB(remoteStorageHost);
-		asyncDBClient = new LettuceClient(); //LettuceOperationUtils.openDB(remoteStorageHost);
-		asyncDBClient.openDB(remoteStorageHost);
+		asyncDBClient = (RemoteKVAsyncClient) syncDBClient;//new LettuceClient(); //LettuceOperationUtils.openDB(remoteStorageHost);
+		//asyncDBClient.openDB(remoteStorageHost);
 		return null;
 	}
 
