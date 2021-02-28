@@ -39,6 +39,15 @@ public class CheckpointingOptions {
 			.noDefaultValue()
 			.withDescription("The state backend to be used to store and checkpoint state.");
 
+	/** The state backend to be used to store and checkpoint state. */
+	@Documentation.Section(
+		value = Documentation.Sections.COMMON_STATE_BACKENDS,
+		position = 1)
+	public static final ConfigOption<String> STATE_BACKEND_HOST = ConfigOptions
+		.key("state.backend.host")
+		.defaultValue("127.0.0.1")
+		.withDescription("The state backend's host to be used to store and checkpoint state.");
+
 	/** The maximum number of completed checkpoints to retain.*/
 	@Documentation.Section(Documentation.Sections.COMMON_STATE_BACKENDS)
 	public static final ConfigOption<Integer> MAX_RETAINED_CHECKPOINTS = ConfigOptions
