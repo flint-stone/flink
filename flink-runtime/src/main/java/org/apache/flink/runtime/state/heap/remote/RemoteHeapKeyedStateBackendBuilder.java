@@ -72,6 +72,8 @@ public class RemoteHeapKeyedStateBackendBuilder<K> extends AbstractKeyedStateBac
 		.defaultValue()
 		.getBytes();
 
+	private String backendHost;
+
 	public RemoteHeapKeyedStateBackendBuilder(
 		TaskKvStateRegistry kvStateRegistry,
 		TypeSerializer<K> keySerializer,
@@ -85,7 +87,8 @@ public class RemoteHeapKeyedStateBackendBuilder<K> extends AbstractKeyedStateBac
 		LocalRecoveryConfig localRecoveryConfig,
 		HeapPriorityQueueSetFactory priorityQueueSetFactory,
 		boolean asynchronousSnapshots,
-		CloseableRegistry cancelStreamRegistry) {
+		CloseableRegistry cancelStreamRegistry,
+		String backendHost) {
 		super(
 			kvStateRegistry,
 			keySerializer,
@@ -100,6 +103,7 @@ public class RemoteHeapKeyedStateBackendBuilder<K> extends AbstractKeyedStateBac
 		this.localRecoveryConfig = localRecoveryConfig;
 		this.priorityQueueSetFactory = priorityQueueSetFactory;
 		this.asynchronousSnapshots = asynchronousSnapshots;
+		this.backendHost = backendHost;
 	}
 
 	@Override
@@ -138,7 +142,7 @@ public class RemoteHeapKeyedStateBackendBuilder<K> extends AbstractKeyedStateBac
 			keyGroupRange,
 			numberOfKeyGroups,
 			snapshotStrategy,
-			keyContext, "localhost");
+			keyContext, this.backendHost);
 
 		try {
 			restoreOperation.restore();

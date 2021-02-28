@@ -121,6 +121,8 @@ public class MemoryStateBackend extends AbstractFileStateBackend implements Conf
 	private final TernaryBoolean asynchronousSnapshots;
 
 	private final String backendType;
+
+	private String backendHost = "127.0.0.1";
 	// ------------------------------------------------------------------------
 
 	/**
@@ -250,6 +252,7 @@ public class MemoryStateBackend extends AbstractFileStateBackend implements Conf
 		this.asynchronousSnapshots = original.asynchronousSnapshots.resolveUndefined(
 				configuration.get(CheckpointingOptions.ASYNC_SNAPSHOTS));
 		this.backendType = backendType;
+		this.backendHost = configuration.get(CheckpointingOptions.STATE_BACKEND_HOST);
 	}
 
 	// ------------------------------------------------------------------------
@@ -356,7 +359,9 @@ public class MemoryStateBackend extends AbstractFileStateBackend implements Conf
 				taskStateManager.createLocalRecoveryConfig(),
 				priorityQueueSetFactory,
 				isUsingAsynchronousSnapshots(),
-				cancelStreamRegistry).build();
+				cancelStreamRegistry,
+				this.backendHost
+				).build();
 		}
 		else{
 			return new HeapKeyedStateBackendBuilder<>(

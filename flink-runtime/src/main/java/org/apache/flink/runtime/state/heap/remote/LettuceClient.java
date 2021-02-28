@@ -223,7 +223,7 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 
 	@Override
 	public void openDB(String host) {
-		RedisURI redisUri = RedisURI.Builder.redis("127.0.0.1", 6379).withPassword("authentication").build();
+		RedisURI redisUri = RedisURI.Builder.redis(host, 6379).withPassword("authentication").build();
 		db = RedisClient.create(redisUri);
 		codec = new ByteArrayCodec();
 		connection = db.connect(codec);
