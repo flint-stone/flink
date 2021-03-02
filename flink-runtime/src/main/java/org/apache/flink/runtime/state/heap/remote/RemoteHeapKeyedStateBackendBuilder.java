@@ -73,6 +73,8 @@ public class RemoteHeapKeyedStateBackendBuilder<K> extends AbstractKeyedStateBac
 		.getBytes();
 
 	private String backendHost;
+	private boolean lazyFlush;
+	private int interval;
 
 	public RemoteHeapKeyedStateBackendBuilder(
 		TaskKvStateRegistry kvStateRegistry,
@@ -88,7 +90,9 @@ public class RemoteHeapKeyedStateBackendBuilder<K> extends AbstractKeyedStateBac
 		HeapPriorityQueueSetFactory priorityQueueSetFactory,
 		boolean asynchronousSnapshots,
 		CloseableRegistry cancelStreamRegistry,
-		String backendHost) {
+		String backendHost,
+		boolean lazyFlush,
+		int interval) {
 		super(
 			kvStateRegistry,
 			keySerializer,
@@ -104,6 +108,8 @@ public class RemoteHeapKeyedStateBackendBuilder<K> extends AbstractKeyedStateBac
 		this.priorityQueueSetFactory = priorityQueueSetFactory;
 		this.asynchronousSnapshots = asynchronousSnapshots;
 		this.backendHost = backendHost;
+		this.lazyFlush = lazyFlush;
+		this.interval = interval;
 	}
 
 	@Override
@@ -142,7 +148,11 @@ public class RemoteHeapKeyedStateBackendBuilder<K> extends AbstractKeyedStateBac
 			keyGroupRange,
 			numberOfKeyGroups,
 			snapshotStrategy,
-			keyContext, this.backendHost);
+			keyContext,
+			this.backendHost,
+			this.lazyFlush,
+			this.interval
+		);
 
 		try {
 			restoreOperation.restore();
