@@ -123,6 +123,10 @@ public class MemoryStateBackend extends AbstractFileStateBackend implements Conf
 	private final String backendType;
 
 	private String backendHost = "127.0.0.1";
+
+	private boolean lazyFlush = false;
+
+	private int interval = 500;
 	// ------------------------------------------------------------------------
 
 	/**
@@ -253,6 +257,8 @@ public class MemoryStateBackend extends AbstractFileStateBackend implements Conf
 				configuration.get(CheckpointingOptions.ASYNC_SNAPSHOTS));
 		this.backendType = backendType;
 		this.backendHost = configuration.get(CheckpointingOptions.STATE_BACKEND_HOST);
+		this.lazyFlush = configuration.get(CheckpointingOptions.STATE_BACKEND_LAZY_FLUSH);
+		this.interval = configuration.get(CheckpointingOptions.STATE_BACKEND_FLUSH_INTERVAL);
 	}
 
 	// ------------------------------------------------------------------------
@@ -360,7 +366,9 @@ public class MemoryStateBackend extends AbstractFileStateBackend implements Conf
 				priorityQueueSetFactory,
 				isUsingAsynchronousSnapshots(),
 				cancelStreamRegistry,
-				this.backendHost
+				this.backendHost,
+				this.lazyFlush,
+				this.interval
 				).build();
 		}
 		else{

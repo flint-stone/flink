@@ -87,6 +87,8 @@ public class RemoteHeapRestoreOperation<K> implements RestoreOperation<Void> {
 	private final InternalKeyContext<K> keyContext;
 
 	protected final String remoteStorageHost;
+	protected final boolean lazyFlush;
+	protected final int interval;
 	public RemoteKVSyncClient syncDBClient;
 	public RemoteKVAsyncClient asyncDBClient;
 
@@ -103,7 +105,9 @@ public class RemoteHeapRestoreOperation<K> implements RestoreOperation<Void> {
 		int numberOfKeyGroups,
 		HeapSnapshotStrategy<K> snapshotStrategy,
 		InternalKeyContext<K> keyContext,
-		String remoteStorageHost
+		String remoteStorageHost,
+		boolean lazyFlush,
+		int interval
 	) {
 		this.restoreStateHandles = restoreStateHandles;
 		this.keySerializerProvider = keySerializerProvider;
@@ -117,6 +121,8 @@ public class RemoteHeapRestoreOperation<K> implements RestoreOperation<Void> {
 		this.snapshotStrategy = snapshotStrategy;
 		this.keyContext = keyContext;
 		this.remoteStorageHost = remoteStorageHost;
+		this.lazyFlush = lazyFlush;
+		this.interval = interval;
 	}
 
 	@Override
@@ -188,12 +194,23 @@ public class RemoteHeapRestoreOperation<K> implements RestoreOperation<Void> {
 			}
 		}
 
-		LOG.trace("RemoteHeapRestoreOperation: Start Jedis to server: {}", remoteStorageHost);
-		// open DB
-		syncDBClient = new LettuceClient();//new JedisSyncClient(); //new LettuceClient();
-		syncDBClient.openDB(remoteStorageHost);
-		asyncDBClient = (RemoteKVAsyncClient) syncDBClient;//new LettuceClient(); //LettuceOperationUtils.openDB(remoteStorageHost);
-		//asyncDBClient.openDB(remoteStorageHost);
+		LOG.trace("RemoteHeapRestoreOperation: Start Jedis to server: {} lazyFlush {}",
+			remoteStorageHost, lazyFlush);
+		if(lazyFlush){
+			// open DB
+			syncDBClient = new LettuceLazyFlushClient();
+			((LettuceLazyFlushClient)syncDBClient).interval = interval;
+			syncDBClient.openDB(remoteStorageHost);
+			asyncDBClient = (RemoteKVAsyncClient) syncDBClient;
+		}
+		else{
+			// open DB
+			syncDBClient = new LettuceClient();//new JedisSyncClient(); //new LettuceClient();
+			syncDBClient.openDB(remoteStorageHost);
+			asyncDBClient = (RemoteKVAsyncClient) syncDBClient;//new LettuceClient(); //LettuceOperationUtils.openDB(remoteStorageHost);
+			//asyncDBClient.openDB(remoteStorageHost);
+		}
+
 		return null;
 	}
 
