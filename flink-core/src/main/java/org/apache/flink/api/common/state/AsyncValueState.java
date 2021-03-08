@@ -46,7 +46,7 @@ public interface AsyncValueState<T> extends State {
 	 * operator instance. If state partitioning is applied, the value returned
 	 * depends on the current operator input, as the operator maintains an
 	 * independent state for each partition.
-	 *AsyncValueState
+	 *
 	 * <p>If you didn't specify a default value when creating the {@link ValueStateDescriptor}
 	 * this will return {@code null} when to value was previously set using {@link #update(Object)}.
 	 *

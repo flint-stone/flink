@@ -198,11 +198,10 @@ public class RemoteHeapRestoreOperation<K> implements RestoreOperation<Void> {
 			remoteStorageHost, lazyFlush);
 		if(lazyFlush){
 			// open DB
-			syncDBClient = new LettuceLazyFlushClient();//new JedisSyncClient(); //new LettuceClient();
+			syncDBClient = new LettuceLazyFlushClient();
 			((LettuceLazyFlushClient)syncDBClient).interval = interval;
 			syncDBClient.openDB(remoteStorageHost);
-			asyncDBClient = (RemoteKVAsyncClient) syncDBClient;//new LettuceClient(); //LettuceOperationUtils.openDB(remoteStorageHost);
-			//asyncDBClient.openDB(remoteStorageHost);
+			asyncDBClient = (RemoteKVAsyncClient) syncDBClient;
 		}
 		else{
 			// open DB
