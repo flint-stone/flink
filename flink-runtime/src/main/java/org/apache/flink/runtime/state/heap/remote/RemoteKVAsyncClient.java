@@ -13,6 +13,8 @@ public interface RemoteKVAsyncClient extends RemoteKVClient {
 	@Nullable
 	CompletableFuture<String> setAsync(byte[] key, byte[] value);
 
+	CompletableFuture<Long> incrAsync(byte[] key);
+
 	CompletableFuture<byte[]> hgetAsync(byte[] key, byte[] field);
 
 	CompletableFuture<Map<byte[], byte[]>> hgetAllAsync(byte[] key);
@@ -33,4 +35,7 @@ public interface RemoteKVAsyncClient extends RemoteKVClient {
 	CompletableFuture<Long> rpushAsync(byte[] key, byte[]... strings);
 
 	CompletableFuture<Long> lpushAsync(byte[] key, byte[]... strings);
+
+	@Nullable
+	CompletableFuture<String> getAndSetAsync(byte[] key, byte[] value);
 }

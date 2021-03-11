@@ -21,8 +21,10 @@ package org.apache.flink.runtime.state.heap;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.state.AggregatingStateDescriptor;
+import org.apache.flink.api.common.state.AsyncIntegerValueStateDescriptor;
 import org.apache.flink.api.common.state.AsyncValueStateDescriptor;
 import org.apache.flink.api.common.state.FoldingStateDescriptor;
+import org.apache.flink.api.common.state.IntegerValueStateDescriptor;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
@@ -82,6 +84,9 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
 			Tuple2.of(ValueStateDescriptor.class, (StateFactory) HeapValueState::create),
 			Tuple2.of(
 				AsyncValueStateDescriptor.class, (StateFactory) HeapAsyncValueState::create),
+			Tuple2.of(IntegerValueStateDescriptor.class, (StateFactory) HeapIntegerValueState::create),
+			Tuple2.of(
+				AsyncIntegerValueStateDescriptor.class, (StateFactory) HeapAsyncIntegerValueState::create),
 			Tuple2.of(ListStateDescriptor.class, (StateFactory) HeapListState::create),
 			Tuple2.of(MapStateDescriptor.class, (StateFactory) HeapMapState::create),
 			Tuple2.of(AggregatingStateDescriptor.class, (StateFactory) HeapAggregatingState::create),

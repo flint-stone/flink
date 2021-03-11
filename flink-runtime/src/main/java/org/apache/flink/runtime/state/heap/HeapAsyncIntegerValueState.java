@@ -3,26 +3,27 @@ package org.apache.flink.runtime.state.heap;
 import org.apache.flink.api.common.state.State;
 import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.runtime.state.internal.InternalAsyncValueState;
+import org.apache.flink.runtime.state.internal.InternalAsyncIntegerValueState;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-public class HeapAsyncValueState<K, N, V>
-	extends AbstractHeapState<K, N, V>
-	implements InternalAsyncValueState<K, N, V> {
-	public HeapAsyncValueState(
-		StateTable<K, N, V> stateTable,
+public class HeapAsyncIntegerValueState<K, N>
+	extends AbstractHeapState<K, N, Long>
+	implements InternalAsyncIntegerValueState<K, N> {
+
+	public HeapAsyncIntegerValueState(
+		StateTable<K, N, Long> stateTable,
 		TypeSerializer<K> keySerializer,
-		TypeSerializer<V> valueSerializer,
+		TypeSerializer<Long> valueSerializer,
 		TypeSerializer<N> namespaceSerializer,
-		V defaultValue) {
+		Long defaultValue) {
 		super(stateTable, keySerializer, valueSerializer, namespaceSerializer, defaultValue);
 	}
 
 	@Override
-	public CompletableFuture<V> value() throws IOException {
-		final V result = stateTable.get(currentNamespace);
+	public CompletableFuture<Long> value() throws IOException {
+		final Long result = stateTable.get(currentNamespace);
 
 		if (result == null) {
 			return CompletableFuture.completedFuture(getDefaultValue());
@@ -42,7 +43,7 @@ public class HeapAsyncValueState<K, N, V>
 	 * @throws IOException Thrown if the system cannot access the state.
 	 */
 	@Override
-	public CompletableFuture<String> update(V value) throws IOException {
+	public CompletableFuture<String> update(Long value) throws IOException {
 		if (value == null) {
 			clear();
 			return CompletableFuture.completedFuture("OK");
@@ -50,6 +51,11 @@ public class HeapAsyncValueState<K, N, V>
 
 		stateTable.put(currentNamespace, value);
 		return CompletableFuture.completedFuture("OK");
+	}
+
+	@Override
+	public CompletableFuture<Long> incr() {
+		return null;
 	}
 
 	/**
@@ -72,7 +78,7 @@ public class HeapAsyncValueState<K, N, V>
 	 * Returns the {@link TypeSerializer} for the type of value this state holds.
 	 */
 	@Override
-	public TypeSerializer<V> getValueSerializer() {
+	public TypeSerializer<Long> getValueSerializer() {
 		return valueSerializer;
 	}
 
@@ -81,12 +87,12 @@ public class HeapAsyncValueState<K, N, V>
 		StateDescriptor<S, SV> stateDesc,
 		StateTable<K, N, SV> stateTable,
 		TypeSerializer<K> keySerializer) {
-		return (IS) new HeapAsyncValueState<>(
-			stateTable,
+		return (IS) new HeapAsyncIntegerValueState<>(
+			(StateTable<K, N, Long>)stateTable,
 			keySerializer,
-			stateTable.getStateSerializer(),
+			(TypeSerializer<Long>)stateTable.getStateSerializer(),
 			stateTable.getNamespaceSerializer(),
-			stateDesc.getDefaultValue());
+			(Long)stateDesc.getDefaultValue());
 	}
 }
 

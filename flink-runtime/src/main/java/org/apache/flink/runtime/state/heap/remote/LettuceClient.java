@@ -62,6 +62,18 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	}
 
 	@Override
+	public Long incr(byte[] key) {
+		try {
+			return commands.incr(key).toCompletableFuture().get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
 	public byte[] hget(byte[] key, byte[] field) {
 		try {
 			return commands.hget(key, field).toCompletableFuture().get();
@@ -210,6 +222,12 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 		cachedFutures.add(commands.hdel(key, field));
 	}
 
+	@Nullable
+	@Override
+	public Object getAndSet(byte[] key, byte[] value) {
+		return null;
+	}
+
 	@Override
 	public void pipelineSync() {
 		commands.flushCommands();
@@ -245,6 +263,11 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	@Override
 	public CompletableFuture<String> setAsync(byte[] key, byte[] value) {
 		return commands.set(key, value).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<Long> incrAsync(byte[] key) {
+		return commands.incr(key).toCompletableFuture();
 	}
 
 	@Override
@@ -293,5 +316,11 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	@Override
 	public CompletableFuture<Long> lpushAsync(byte[] key, byte[]... strings) {
 		return commands.lpush(key, strings).toCompletableFuture();
+	}
+
+	@Nullable
+	@Override
+	public CompletableFuture<String> getAndSetAsync(byte[] key, byte[] value) {
+		return null;
 	}
 }

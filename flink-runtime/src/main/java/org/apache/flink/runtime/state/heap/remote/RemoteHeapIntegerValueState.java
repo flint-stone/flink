@@ -23,22 +23,23 @@ import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.runtime.state.RegisteredKeyValueStateBackendMetaInfo;
-import org.apache.flink.runtime.state.internal.InternalValueState;
+import org.apache.flink.runtime.state.internal.InternalIntegerValueState;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * Heap-backed partitioned {@link ValueState} that is snapshotted into files.
  *
  * @param <K> The type of the key.
  * @param <N> The type of the namespace.
- * @param <V> The type of the value.
  */
-class RemoteHeapValueState<K, N, V>
-	extends AbstractRemoteHeapState<K, N, V>
-	implements InternalValueState<K, N, V> {
+class RemoteHeapIntegerValueState<K, N>
+	extends AbstractRemoteHeapState<K, N, Long>
+	implements InternalIntegerValueState<K, N> {
 	private static final Logger LOG = LoggerFactory.getLogger(RemoteHeapValueState.class);
 
 
@@ -52,12 +53,12 @@ class RemoteHeapValueState<K, N, V>
 	 * @param defaultValue The default value for the state.
 	 * @param backend KeyBackend
 	 */
-	protected RemoteHeapValueState(
+	protected RemoteHeapIntegerValueState(
 		TypeSerializer<K> keySerializer,
-		TypeSerializer<V> valueSerializer,
+		TypeSerializer<Long> valueSerializer,
 		TypeSerializer<N> namespaceSerializer,
 		RemoteHeapKeyedStateBackend.RemoteHeapKvStateInfo kvStateInfo,
-		V defaultValue,
+		Long defaultValue,
 		RemoteHeapKeyedStateBackend backend) {
 		super(
 			keySerializer,
@@ -79,12 +80,12 @@ class RemoteHeapValueState<K, N, V>
 	}
 
 	@Override
-	public TypeSerializer<V> getValueSerializer() {
+	public TypeSerializer<Long> getValueSerializer() {
 		return valueSerializer;
 	}
 
 	@Override
-	public V value() {
+	public Long value() {
 		try {
 			byte[] valueBytes = backend.syncRemClient.get(
 				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes));
@@ -92,7 +93,7 @@ class RemoteHeapValueState<K, N, V>
 				return getDefaultValue();
 			}
 			dataInputView.setBuffer(valueBytes);
-			V value = valueSerializer.deserialize(dataInputView);
+			Long value = valueSerializer.deserialize(dataInputView);
 			LOG.debug(
 				"RemoteHeapValueState retrieve value state {} namespace {} key {}",
 				value,
@@ -104,13 +105,22 @@ class RemoteHeapValueState<K, N, V>
 		}
 	}
 
+	/**
+	 * Updates the operator state accessible by {@link #value()} to the given
+	 * value. The next time {@link #value()} is called (for the same state
+	 * partition) the returned state will represent the updated value. When a
+	 * partitioned state is updated with null, the state for the current key
+	 * will be removed and the default value is returned on the next access.
+	 *
+	 * @param value The new value for the state.
+	 * @throws IOException Thrown if the system cannot access the state.
+	 */
 	@Override
-	public void update(V value) {
+	public void update(Long value) throws IOException {
 		if (value == null) {
 			clear();
 			return;
 		}
-
 		try {
 			backend.syncRemClient.set(
 				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
@@ -125,6 +135,25 @@ class RemoteHeapValueState<K, N, V>
 		}
 	}
 
+	@Override
+	public Long incr() {
+		try {
+			Long value = backend.syncRemClient.incr(
+				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes));
+			if (value == null) {
+				return getDefaultValue();
+			}
+			LOG.debug(
+				"RemoteHeapValueState retrieve value state {} namespace {} key {}",
+				value,
+				currentNamespace,
+				backend.getCurrentKey());
+			return value;
+		} catch (Exception e) {
+			throw new FlinkRuntimeException("Error while retrieving data from remote heap.", e);
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	static <K, N, SV, S extends State, IS extends S> IS create(
 		StateDescriptor<S, SV> stateDesc,
@@ -133,13 +162,12 @@ class RemoteHeapValueState<K, N, V>
 		RemoteHeapKeyedStateBackend backend) {
 		RemoteHeapKeyedStateBackend.RemoteHeapKvStateInfo kvState = backend.getRemoteHeapKvStateInfo(
 			stateDesc.getName());
-		return (IS) new RemoteHeapValueState<>(
+		return (IS) new RemoteHeapIntegerValueState<>(
 			keySerializer,
-			metaInfo.getStateSerializer(),
+			(TypeSerializer<Long>)metaInfo.getStateSerializer(),
 			metaInfo.getNamespaceSerializer(),
 			kvState,
-			stateDesc.getDefaultValue(),
+			(Long)stateDesc.getDefaultValue(),
 			backend);
 	}
-
 }

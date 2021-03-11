@@ -12,6 +12,8 @@ public interface RemoteKVSyncClient extends RemoteKVClient {
 	@Nullable
 	Object set(byte[] key, byte[] value);
 
+	Long incr(byte[] key);
+
 	byte[] hget(byte[] key, byte[] field);
 
 	Map<byte[], byte[]> hgetAll(byte[] key);
@@ -33,7 +35,12 @@ public interface RemoteKVSyncClient extends RemoteKVClient {
 
 	Long lpush(byte[] key, byte[]... strings);
 
+
+
 	void pipelineHSet(byte[] key, byte[] field, byte[] value);
 
 	void pipelineHDel(byte[] key, byte[] field);
+
+	@Nullable
+	Object getAndSet(byte[] key, byte[]value);
 }

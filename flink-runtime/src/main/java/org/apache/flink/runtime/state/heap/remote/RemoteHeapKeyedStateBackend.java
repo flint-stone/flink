@@ -2,8 +2,10 @@ package org.apache.flink.runtime.state.heap.remote;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.state.AggregatingStateDescriptor;
+import org.apache.flink.api.common.state.AsyncIntegerValueStateDescriptor;
 import org.apache.flink.api.common.state.AsyncValueStateDescriptor;
 import org.apache.flink.api.common.state.FoldingStateDescriptor;
+import org.apache.flink.api.common.state.IntegerValueStateDescriptor;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
@@ -110,6 +112,12 @@ public class RemoteHeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K>
 			Tuple2.of(
 				AsyncValueStateDescriptor.class,
 				(RemoteHeapKeyedStateBackend.StateFactory) RemoteHeapAsyncValueState::create),
+			Tuple2.of(
+				IntegerValueStateDescriptor.class,
+				(RemoteHeapKeyedStateBackend.StateFactory) RemoteHeapIntegerValueState::create),
+			Tuple2.of(
+				AsyncIntegerValueStateDescriptor.class,
+				(RemoteHeapKeyedStateBackend.StateFactory) RemoteHeapAsyncIntegerValueState::create),
 			Tuple2.of(
 				ListStateDescriptor.class,
 				(RemoteHeapKeyedStateBackend.StateFactory) RemoteHeapListState::create),

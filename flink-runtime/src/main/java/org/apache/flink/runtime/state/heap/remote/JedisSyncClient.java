@@ -28,6 +28,9 @@ public class JedisSyncClient implements RemoteKVSyncClient {
 	public Object set(byte[] key, byte[] value) { return db.set(key, value); }
 
 	@Override
+	public Long incr(byte[] key) { return db.incr(key); }
+
+	@Override
 	public byte[] hget(byte[] key, byte[] field) {
 		return db.hget(key, field);
 	}
@@ -87,6 +90,17 @@ public class JedisSyncClient implements RemoteKVSyncClient {
 	@Override
 	public void pipelineHDel(byte[] key, byte[] field) {
 		pipeline.hdel(key, field);
+	}
+
+	@Nullable
+	@Override
+	public Object getAndSet(byte[] key, byte[] value) {
+		try {
+			throw new Exception("Method Not Implemented.");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	@Override
