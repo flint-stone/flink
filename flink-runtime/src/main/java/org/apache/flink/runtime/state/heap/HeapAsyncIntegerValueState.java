@@ -55,7 +55,12 @@ public class HeapAsyncIntegerValueState<K, N>
 
 	@Override
 	public CompletableFuture<Long> incr() {
-		return null;
+		Long result = stateTable.get(currentNamespace);
+		if (result == null) {
+			result =getDefaultValue();
+		}
+		stateTable.put(currentNamespace, result++);
+		return CompletableFuture.completedFuture(result);
 	}
 
 	/**
