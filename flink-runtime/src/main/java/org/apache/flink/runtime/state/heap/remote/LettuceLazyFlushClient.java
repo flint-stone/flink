@@ -4,6 +4,7 @@ import io.lettuce.core.LettuceFutures;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.RedisURI;
+import io.lettuce.core.TransactionResult;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.codec.ByteArrayCodec;
@@ -13,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 
-	private static final Logger LOG = LoggerFactory.getLogger(LettuceClient.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LettuceAsyncClient.class);
 
 	private RedisClient db;
 
@@ -42,6 +42,8 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	private Timer timer;
 
 	public int interval = 500;
+
+	public static LettuceLazyFlushClient Client;
 
 	@Override
 	public byte[] get(byte[] key) {
@@ -77,7 +79,33 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 		CompletableFuture<Long> future = commands.incr(key).toCompletableFuture();
 		commands.flushCommands();
 		try {
-			return future.get();
+			Long value= future.get();
+			LOG.info("incrAsync {} value {}", key, value );
+			return value;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Object multi() {
+		try {
+			return commands.multi().get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Object exec() {
+		try {
+			return commands.exec().get();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -283,7 +311,7 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	}
 
 	@Override
-	public CompletableFuture<byte[]> getAsync(byte[] key) {
+	public CompletableFuture<byte[]>  getAsync(byte[] key) {
 		return commands.get(key).toCompletableFuture();
 	}
 
@@ -295,7 +323,18 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 
 	@Override
 	public CompletableFuture<Long> incrAsync(byte[] key) {
+		LOG.info("incrAsync {}", key);
 		return commands.incr(key).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<String> multiAsync() {
+		return commands.multi().toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<TransactionResult> execAsync() {
+		return commands.exec().toCompletableFuture();
 	}
 
 	@Override

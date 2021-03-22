@@ -32,6 +32,26 @@ public class JedisClusterSyncClient implements RemoteKVSyncClient {
 	public Long incr(byte[] key) { return db.incr(key); }
 
 	@Override
+	public Object multi() {
+		try {
+			throw new Exception("MULTI is Not Supported For Jedis Cluster");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Object exec() {
+		try {
+			throw new Exception("EXEC is Not Supported For Jedis Cluster");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
 	public byte[] hget(byte[] key, byte[] field) {
 		return db.hget(key, field);
 	}

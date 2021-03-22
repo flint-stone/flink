@@ -14,6 +14,10 @@ public interface RemoteKVSyncClient extends RemoteKVClient {
 
 	Long incr(byte[] key);
 
+	Object multi();
+
+	Object exec();
+
 	byte[] hget(byte[] key, byte[] field);
 
 	Map<byte[], byte[]> hgetAll(byte[] key);

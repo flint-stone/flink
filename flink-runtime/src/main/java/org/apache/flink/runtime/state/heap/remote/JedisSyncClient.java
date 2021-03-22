@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.Transaction;
 
 import javax.annotation.Nullable;
 
@@ -18,6 +19,7 @@ public class JedisSyncClient implements RemoteKVSyncClient {
 
 	private Pipeline pipeline;
 
+	private Transaction transaction;
 	@Override
 	public byte[] get(byte[] key) {
 		return db.get(key);
@@ -29,6 +31,17 @@ public class JedisSyncClient implements RemoteKVSyncClient {
 
 	@Override
 	public Long incr(byte[] key) { return db.incr(key); }
+
+	@Override
+	public Object multi() {
+		transaction = db.multi();
+		return transaction;
+	}
+
+	@Override
+	public Object exec() {
+		return transaction.exec();
+	}
 
 	@Override
 	public byte[] hget(byte[] key, byte[] field) {

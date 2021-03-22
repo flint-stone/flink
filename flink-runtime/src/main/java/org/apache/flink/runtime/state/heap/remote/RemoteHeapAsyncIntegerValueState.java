@@ -18,19 +18,23 @@
 
 package org.apache.flink.runtime.state.heap.remote;
 
+import io.lettuce.core.TransactionResult;
+
 import org.apache.flink.api.common.state.State;
 import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.common.typeutils.base.StringSerializer;
 import org.apache.flink.runtime.state.RegisteredKeyValueStateBackendMetaInfo;
 import org.apache.flink.runtime.state.internal.InternalAsyncIntegerValueState;
-import org.apache.flink.runtime.state.internal.InternalAsyncValueState;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Heap-backed partitioned {@link ValueState} that is snapshotted into files.
@@ -42,7 +46,7 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 	extends AbstractRemoteHeapState<K, N, Long>
 	implements InternalAsyncIntegerValueState<K, N> {
 	private static final Logger LOG = LoggerFactory.getLogger(RemoteHeapValueState.class);
-
+	private static ReentrantLock lock = new ReentrantLock();
 	/**
 	 * Creates a new key/value state for the given hash map of key/value pairs.
 	 *
@@ -87,6 +91,7 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 	@Override
 	public CompletableFuture<Long> value() {
 		CompletableFuture<Long> ret = null;
+		StringSerializer serializer = new StringSerializer();
 		try {
 			ret = backend.asyncRemClient.getAsync(serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes)).thenApply(valueBytes->{
 					if (valueBytes == null) {
@@ -97,12 +102,24 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 					try {
 						value = valueSerializer.deserialize(dataInputView);
 					} catch (IOException e) {
+						try {
+							String maybe = serializer.deserialize(dataInputView);
+							LOG.debug(
+								"RemoteHeapAsyncValueState retrieve maybe state {} namespace {} valueBytes {} key {} thread {}",
+								maybe,
+								currentNamespace,
+								valueBytes,
+								backend.getCurrentKey(), Thread.currentThread().getName());
+						} catch (IOException ex) {
+							ex.printStackTrace();
+						}
 						e.printStackTrace();
 					}
 					LOG.debug(
-						"RemoteHeapAsyncValueState retrieve value state {} namespace {} key {} thread {}",
+						"RemoteHeapAsyncValueState retrieve value state {} namespace {} valueBytes {} key {} thread {}",
 						value,
 						currentNamespace,
+						valueBytes,
 						backend.getCurrentKey(), Thread.currentThread().getName());
 					return value;
 				}
@@ -139,25 +156,138 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 	@Override
 	public CompletableFuture<Long> incr() {
 		CompletableFuture<Long> ret = null;
+		StringSerializer serializer = new StringSerializer();
 		try {
-			ret = backend.asyncRemClient
-				.incrAsync(serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes))
-				.thenApply(value->{
-					if (value == null) {
-						return getDefaultValue();
+
+			//lock.lock();
+			String multi = backend.asyncRemClient.multiAsync().get();
+			byte[] serializedKey = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+			ret = backend.asyncRemClient.getAsync(serializedKey).thenApply(valueBytes->{
+					Long value;
+					if (valueBytes == null) {
+						value = getDefaultValue();
 					}
-					LOG.debug(
-						"RemoteHeapAsyncValueState retrieve value state {} namespace {} key {} thread {}",
-						value,
-						currentNamespace,
-						backend.getCurrentKey(), Thread.currentThread().getName());
+					else{
+						LOG.debug(
+							"RemoteHeapAsyncValueState incr retrieve valueBytes {} multi {} namespace {}  key {} {} thread {}",
+							valueBytes,
+							multi,
+							currentNamespace,
+							backend.getCurrentKey(), serializedKey, Thread.currentThread().getName());
+						dataInputView.setBuffer(valueBytes);
+						value = null;
+						try {
+							value = valueSerializer.deserialize(dataInputView);
+						} catch (Exception e) {
+							try {
+								String maybe = serializer.deserialize(dataInputView);
+								LOG.debug(
+									"RemoteHeapAsyncValueState retrieve maybe state {} multi {} namespace {} valueBytes {} key {} thread {}",
+									maybe,
+									multi,
+									currentNamespace,
+									valueBytes,
+									backend.getCurrentKey(), Thread.currentThread().getName());
+							} catch (IOException ex) {
+								ex.printStackTrace();
+							}
+							e.printStackTrace();
+						}
+
+						LOG.debug(
+							"RemoteHeapAsyncValueState incr retrieve value state {} valueBytes {} namespace {}  multi {} key {} {} thread {}",
+							value,
+							valueBytes,
+							currentNamespace,
+							multi,
+							backend.getCurrentKey(), serializedKey, Thread.currentThread().getName());
+					}
+					try {
+						byte[] keyBytes = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+						value++;
+						byte[] serializeValue = serializeValue(value);
+						backend.asyncRemClient.setAsync(
+							keyBytes,
+							serializeValue
+							);
+						LOG.debug(
+							"RemoteHeapAsyncValueState incr update value state {} {} namespace {} multi {} key {} {} thread {}",
+							value, serializeValue,
+							currentNamespace,
+							multi,
+							backend.getCurrentKey(), keyBytes, Thread.currentThread().getName());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 					return value;
 				}
 			);
+			TransactionResult result = backend.asyncRemClient.execAsync().get();
+			LOG.debug(
+				"RemoteHeapAsyncValueState incr transaction result {} namespace {} multi {} key {}  thread {}",
+				result,
+				currentNamespace,
+				multi,
+				backend.getCurrentKey(), Thread.currentThread().getName());
+			//lock.unlock();
+
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
 			e.printStackTrace();
 		}
 		return ret;
+
+
+//		CompletableFuture<Long> ret = null;
+//		try {
+//			ret = backend.asyncRemClient.getAsync(serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes)).thenApply(valueBytes->{
+//					if (valueBytes == null) {
+//						return getDefaultValue();
+//					}
+//					dataInputView.setBuffer(valueBytes);
+//					Long value = null;
+//					try {
+//						value = valueSerializer.deserialize(dataInputView);
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//					}
+//					LOG.debug(
+//						"RemoteHeapAsyncValueState retrieve value state {} namespace {} key {} thread {}",
+//						value,
+//						currentNamespace,
+//						backend.getCurrentKey(), Thread.currentThread().getName());
+//					return value;
+//				}
+//			);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		return ret;
+
+
+//		CompletableFuture<Long> ret = null;
+//		try {
+//			ret = backend.asyncRemClient
+//				.incrAsync(serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes))
+//				.thenApply(value->{
+//					if (value == null) {
+//						return getDefaultValue();
+//					}
+//					LOG.debug(
+//						"RemoteHeapAsyncValueState incr value state {} namespace {} key {} thread {}",
+//						value,
+//						currentNamespace,
+//						backend.getCurrentKey(), Thread.currentThread().getName());
+//					return value;
+//				}
+//			);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		return ret;
 	}
 
 	@SuppressWarnings("unchecked")

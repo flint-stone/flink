@@ -313,8 +313,9 @@ public class RemoteHeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K>
 		}
 		RegisteredKeyValueStateBackendMetaInfo<N, SV> registerResult = tryRegisterKvStateInformation(
 			stateDesc, namespaceSerializer, snapshotTransformFactory);
-		LOG.trace("RemoteKeyedStateBackend: createInternalState {} default {} queryable state name {}",
+		LOG.debug("RemoteKeyedStateBackend: createInternalState {} desc {} default {} queryable state name {}",
 			stateDesc.getName(),
+			stateDesc,
 			stateDesc.getDefaultValue(),
 			stateDesc.getQueryableStateName());
 		return stateFactory.createState(

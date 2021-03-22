@@ -18,6 +18,8 @@
 
 package org.apache.flink.runtime.state.heap.remote;
 
+import io.lettuce.core.TransactionResult;
+
 import org.apache.flink.api.common.state.State;
 import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
@@ -30,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Heap-backed partitioned {@link ValueState} that is snapshotted into files.
@@ -67,6 +70,10 @@ class RemoteHeapIntegerValueState<K, N>
 			kvStateInfo,
 			defaultValue,
 			backend);
+		LOG.debug(
+			"RemoteHeapIntegerValueState init kvStateInfo {} defaultValue {}",
+			kvStateInfo,
+			defaultValue);
 	}
 
 	@Override
@@ -137,22 +144,137 @@ class RemoteHeapIntegerValueState<K, N>
 
 	@Override
 	public Long incr() {
+		LOG.debug(
+			"RemoteHeapIntegerValueState incr retrieve namespace {} key {} tid {}",
+			currentNamespace,
+			backend.getCurrentKey(), Thread.currentThread().getName());
+//		String multi = (String) backend.syncRemClient.multi();
+		Long ret = 0L;
 		try {
-			Long value = backend.syncRemClient.incr(
-				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes));
-			if (value == null) {
-				return getDefaultValue();
+			byte[] serializedKey = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+			byte[] valueBytes = backend.syncRemClient.get(serializedKey);
+			if (valueBytes == null) {
+				ret = getDefaultValue();
 			}
+			else{
+				dataInputView.setBuffer(valueBytes);
+				Long value =
+					valueSerializer.deserialize(dataInputView);
+				LOG.debug(
+					"RemoteHeapIntegerValueState incr retrieve value state {} namespace {} key {}",
+					value,
+					currentNamespace,
+					backend.getCurrentKey());
+				ret = value;
+			}
+			ret++;
+			backend.syncRemClient.set(
+				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
+				serializeValue(ret));
 			LOG.debug(
-				"RemoteHeapValueState retrieve value state {} namespace {} key {}",
-				value,
+				"RemoteHeapIntegerValueState incr update value state {} namespace {} key {}",
+				ret,
 				currentNamespace,
 				backend.getCurrentKey());
-			return value;
-		} catch (Exception e) {
-			throw new FlinkRuntimeException("Error while retrieving data from remote heap.", e);
+//			return value;
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+//		TransactionResult result = (TransactionResult) backend.syncRemClient.exec();
+//		LOG.debug(
+//			"RemoteHeapIntegerValueState incr transaction to value namespace {} key {} result {}",
+//			currentNamespace,
+//			backend.getCurrentKey(), Arrays.toString(result.stream().toArray()));
+//		byte[] read = result.get(0);
+//		if(read != null){
+//			dataInputView.setBuffer(read);
+//			try {
+//				Long value =
+//					valueSerializer.deserialize(dataInputView);
+//				LOG.debug(
+//					"RemoteHeapIntegerValueState incr transaction to value namespace {} key {} value read {}",
+//					currentNamespace,
+//					backend.getCurrentKey(), value);
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		}
+		return ret;
+		/*
+		LOG.debug(
+			"RemoteHeapIntegerValueState incr retrieve namespace {} key {} tid {}",
+			currentNamespace,
+			backend.getCurrentKey(), Thread.currentThread().getName());
+		String multi = (String) backend.syncRemClient.multi();
+		Long ret = 0L;
+		try {
+			byte[] serializedKey = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+			byte[] valueBytes = backend.syncRemClient.get(serializedKey);
+			if (valueBytes == null) {
+				ret = getDefaultValue();
+			}
+			else{
+				dataInputView.setBuffer(valueBytes);
+				Long value =
+					valueSerializer.deserialize(dataInputView);
+				LOG.debug(
+					"RemoteHeapIntegerValueState incr retrieve value state {} namespace {} key {}",
+					value,
+					currentNamespace,
+					backend.getCurrentKey());
+				ret = value;
+			}
+			ret++;
+			backend.syncRemClient.set(
+				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
+				serializeValue(ret));
+			LOG.debug(
+				"RemoteHeapIntegerValueState incr update value state {} namespace {} key {}",
+				ret,
+				currentNamespace,
+				backend.getCurrentKey());
+//			return value;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		TransactionResult result = (TransactionResult) backend.syncRemClient.exec();
+		LOG.debug(
+			"RemoteHeapIntegerValueState incr transaction to value namespace {} key {} result {}",
+			currentNamespace,
+			backend.getCurrentKey(), Arrays.toString(result.stream().toArray()));
+		byte[] read = result.get(0);
+		if(read != null){
+			dataInputView.setBuffer(read);
+			try {
+				Long value =
+					valueSerializer.deserialize(dataInputView);
+				LOG.debug(
+					"RemoteHeapIntegerValueState incr transaction to value namespace {} key {} value read {}",
+					currentNamespace,
+					backend.getCurrentKey(), value);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return ret;
+		*/
+//		try {
+//			Long value = backend.syncRemClient.incr(
+//				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes));
+//			if (value == null) {
+//				return getDefaultValue();
+//			}
+//			LOG.debug(
+//				"RemoteHeapValueState incr result value state {} namespace {} key {}",
+//				value,
+//				currentNamespace,
+//				backend.getCurrentKey());
+//			return value;
+//		} catch (Exception e) {
+//			throw new FlinkRuntimeException("Error while retrieving data from remote heap.", e);
+//		}
 	}
+
 
 	@SuppressWarnings("unchecked")
 	static <K, N, SV, S extends State, IS extends S> IS create(
@@ -162,6 +284,10 @@ class RemoteHeapIntegerValueState<K, N>
 		RemoteHeapKeyedStateBackend backend) {
 		RemoteHeapKeyedStateBackend.RemoteHeapKvStateInfo kvState = backend.getRemoteHeapKvStateInfo(
 			stateDesc.getName());
+		LOG.debug(
+			"RemoteHeapIntegerValueState create kvState {} stateDesc {}",
+			kvState,
+			stateDesc);
 		return (IS) new RemoteHeapIntegerValueState<>(
 			keySerializer,
 			(TypeSerializer<Long>)metaInfo.getStateSerializer(),

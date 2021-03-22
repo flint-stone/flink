@@ -4,6 +4,7 @@ import io.lettuce.core.LettuceFutures;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.RedisURI;
+import io.lettuce.core.TransactionResult;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.codec.ByteArrayCodec;
@@ -12,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,9 +22,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
+public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 
-	private static final Logger LOG = LoggerFactory.getLogger(LettuceClient.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LettuceAsyncClient.class);
 
 	private RedisClient db;
 
@@ -39,7 +39,12 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	@Override
 	public byte[] get(byte[] key) {
 		try {
-			return commands.get(key).toCompletableFuture().get();
+			LOG.debug("LettuceClient get start tid {}", Thread.currentThread().getName() );
+			CompletableFuture<byte[]> future = commands.get(key).toCompletableFuture();
+			commands.flushCommands();
+			byte[] ret = future.get();
+			LOG.debug("LettuceClient get end {} tid {}", ret, Thread.currentThread().getName());
+			return ret;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -52,7 +57,10 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	@Override
 	public Object set(byte[] key, byte[] value) {
 		try {
-			return commands.set(key, value).toCompletableFuture().get();
+			LOG.debug("LettuceClient set start tid {}", Thread.currentThread().getName() );
+			String ret = commands.set(key, value).toCompletableFuture().get();
+			LOG.debug("LettuceClient set end {} tid {}", ret, Thread.currentThread().getName() );
+			return ret;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -65,6 +73,36 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	public Long incr(byte[] key) {
 		try {
 			return commands.incr(key).toCompletableFuture().get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Object multi() {
+		try {
+			LOG.debug("LettuceClient multi start tid {}", Thread.currentThread().getName() );
+			String ret = commands.multi().get();
+			LOG.debug("LettuceClient multi end {} tid {}", ret, Thread.currentThread().getName() );
+			return ret;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Object exec() {
+		try {
+			LOG.debug("LettuceClient exec start tid {}", Thread.currentThread().getName() );
+			TransactionResult ret = commands.exec().get();
+			LOG.debug("LettuceClient exec end {} tid {}", ret, Thread.currentThread().getName());
+			return ret;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -268,6 +306,16 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	@Override
 	public CompletableFuture<Long> incrAsync(byte[] key) {
 		return commands.incr(key).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<String> multiAsync() {
+		return commands.multi().toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<TransactionResult> execAsync() {
+		return commands.exec().toCompletableFuture();
 	}
 
 	@Override

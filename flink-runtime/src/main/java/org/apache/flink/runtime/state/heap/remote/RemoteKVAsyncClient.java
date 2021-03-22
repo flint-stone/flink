@@ -1,5 +1,7 @@
 package org.apache.flink.runtime.state.heap.remote;
 
+import io.lettuce.core.TransactionResult;
+
 import javax.annotation.Nullable;
 
 import java.util.Collection;
@@ -14,6 +16,10 @@ public interface RemoteKVAsyncClient extends RemoteKVClient {
 	CompletableFuture<String> setAsync(byte[] key, byte[] value);
 
 	CompletableFuture<Long> incrAsync(byte[] key);
+
+	CompletableFuture<String> multiAsync();
+
+	CompletableFuture<TransactionResult> execAsync();
 
 	CompletableFuture<byte[]> hgetAsync(byte[] key, byte[] field);
 
