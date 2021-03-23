@@ -159,7 +159,7 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 		StringSerializer serializer = new StringSerializer();
 		try {
 
-			//lock.lock();
+			lock.lock();
 			String multi = backend.asyncRemClient.multiAsync().get();
 			byte[] serializedKey = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
 			ret = backend.asyncRemClient.getAsync(serializedKey).thenApply(valueBytes->{
@@ -229,7 +229,7 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 				currentNamespace,
 				multi,
 				backend.getCurrentKey(), Thread.currentThread().getName());
-			//lock.unlock();
+			lock.unlock();
 
 		} catch (IOException e) {
 			e.printStackTrace();

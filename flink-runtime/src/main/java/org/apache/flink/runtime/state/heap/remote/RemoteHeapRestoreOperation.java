@@ -201,7 +201,8 @@ public class RemoteHeapRestoreOperation<K> implements RestoreOperation<Void> {
 			syncDBClient = LettuceLazyFlushClient.Client; //new LettuceLazyFlushClient();
 			((LettuceLazyFlushClient)syncDBClient).interval = interval;
 			syncDBClient.openDB(remoteStorageHost);
-			asyncDBClient = (RemoteKVAsyncClient) syncDBClient;
+			asyncDBClient = new LettuceLazyFlushClient(); //(RemoteKVAsyncClient) syncDBClient;
+			asyncDBClient.openDB(remoteStorageHost);
 		}
 		else{
 			// open DB
@@ -211,7 +212,7 @@ public class RemoteHeapRestoreOperation<K> implements RestoreOperation<Void> {
 //				syncDBClient.openDB(remoteStorageHost);
 //			}
 			syncDBClient.openDB(remoteStorageHost);
-			asyncDBClient = LettuceAsyncClient.Client; //(RemoteKVAsyncClient) new LettuceAsyncClient(); //LettuceOperationUtils.openDB(remoteStorageHost);
+			asyncDBClient = new LettuceAsyncClient(); //(RemoteKVAsyncClient) new LettuceAsyncClient(); //LettuceOperationUtils.openDB(remoteStorageHost);
 			asyncDBClient.openDB(remoteStorageHost);
 		}
 
