@@ -43,7 +43,9 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 
 	public int interval = 500;
 
-	public static LettuceLazyFlushClient Client;
+	public static LettuceLazyFlushClient Client = new LettuceLazyFlushClient();
+
+	public Boolean initialized = false;
 
 	@Override
 	public byte[] get(byte[] key) {
@@ -282,26 +284,45 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 
 	@Override
 	public void openDB(String host) {
-		RedisURI redisUri = RedisURI.Builder.redis(host, 6379).withPassword("authentication").build();
-		db = RedisClient.create(redisUri);
-		ClientResources resources = db.getResources();
-		codec = new ByteArrayCodec();
-		connection = db.connect(codec);
-		commands = connection.async();
-		commands.setAutoFlushCommands(false);
-		Timer timer = new Timer();
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				System.out.println("commands flush " + Thread.currentThread().getName() +
-					" host " + host +
-					" current queue content " +
-					(resources==null?"null":resources.getCommandBuffer().stream().map(x->x.toString()).collect(Collectors.joining(","))));
-				commands.flushCommands();
+		synchronized (initialized){
+			if(!initialized) {
+				RedisURI redisUri = RedisURI.Builder
+					.redis(host, 6379)
+					.withPassword("authentication")
+					.build();
+				db = RedisClient.create(redisUri);
+				ClientResources resources = db.getResources();
+				codec = new ByteArrayCodec();
+				connection = db.connect(codec);
+				commands = connection.async();
+				commands.setAutoFlushCommands(false);
+				Timer timer = new Timer();
+				timer.schedule(new TimerTask() {
+					@Override
+					public void run() {
+						System.out.println("commands flush " + Thread.currentThread().getName() +
+							" host " + host +
+							" current queue content " +
+							(resources == null ? "null" : resources
+								.getCommandBuffer()
+								.stream()
+								.map(x -> x.toString())
+								.collect(Collectors.joining(","))));
+						commands.flushCommands();
+					}
+				}, interval, interval);
+				initialized = true;
+				LOG.info(
+					"Connection from Lettuce Lazy Flush Client to Redis Cluster {} successful with interval {}."
+					,
+					host,
+					interval);
 			}
-		}, interval, interval);
-		LOG.info("Connection from Lettuce Lazy Flush Client to Redis Cluster {} successful with interval {}."
-			, host, interval);
+		}
+	}
+
+	public LettuceLazyFlushClient(){
+		LOG.info("Initialize LettuceLazyFlushClient once at tid {}", Thread.currentThread().getName());
 	}
 
 	@Override

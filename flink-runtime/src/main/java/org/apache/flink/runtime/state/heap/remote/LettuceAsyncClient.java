@@ -36,6 +36,10 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 
 	private ByteArrayCodec codec;
 
+	public static LettuceAsyncClient Client = new LettuceAsyncClient();
+
+	public Boolean initialized = false;
+
 	@Override
 	public byte[] get(byte[] key) {
 		try {
@@ -279,12 +283,24 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 
 	@Override
 	public void openDB(String host) {
-		RedisURI redisUri = RedisURI.Builder.redis(host, 6379).withPassword("authentication").build();
-		db = RedisClient.create(redisUri);
-		codec = new ByteArrayCodec();
-		connection = db.connect(codec);
-		commands = connection.async();
-		LOG.info("Connection from Lettuce Client to Redis Cluster {} successful.", host);
+		synchronized (initialized){
+			if(!initialized) {
+				RedisURI redisUri = RedisURI.Builder
+					.redis(host, 6379)
+					.withPassword("authentication")
+					.build();
+				db = RedisClient.create(redisUri);
+				codec = new ByteArrayCodec();
+				connection = db.connect(codec);
+				commands = connection.async();
+				initialized = true;
+				LOG.info("Connection from Lettuce Client to Redis Cluster {} successful.", host);
+			}
+		}
+	}
+
+	public LettuceAsyncClient(){
+		LOG.info("Initialize LettuceAsyncClient once at tid {}", Thread.currentThread().getName());
 	}
 
 	@Override
