@@ -87,7 +87,9 @@ class RemoteHeapMapState<K, N, UK, UV>
 		Preconditions.checkState(
 			valueSerializer instanceof MapSerializer,
 			"Unexpected serializer type.");
-
+		LOG.debug(
+			"RemoteHeapMapState create state  namespace {} thread {}",
+			currentNamespace, Thread.currentThread().getName());
 		MapSerializer<UK, UV> castedMapSerializer = (MapSerializer<UK, UV>) valueSerializer;
 		this.userKeySerializer = castedMapSerializer.getKeySerializer();
 		this.userValueSerializer = castedMapSerializer.getValueSerializer();
@@ -118,7 +120,7 @@ class RemoteHeapMapState<K, N, UK, UV>
 			dataInputView,
 			rawValueBytes,
 			userValueSerializer));
-		LOG.trace(
+		LOG.debug(
 			"RemoteHeapMapState retrieve value state {} userKey {} namespace {}",
 			value,
 			userKey,
@@ -132,7 +134,7 @@ class RemoteHeapMapState<K, N, UK, UV>
 			userKey,
 			userKeySerializer);
 		byte[] rawValueBytes = serializeValueNullSensitive(userValue, userValueSerializer);
-		LOG.trace(
+		LOG.debug(
 			"RemoteHeapMapState put value state {} userKey {} namespace {}",
 			userValue,
 			userKey,
@@ -145,6 +147,10 @@ class RemoteHeapMapState<K, N, UK, UV>
 		if (map == null) {
 			return;
 		}
+		LOG.debug(
+			"RemoteHeapMapState putAll value map size {}  namespace {}",
+			map.size(),
+			currentNamespace);
 
 		try (RemoteHeapWriteBatchWrapper writeBatchWrapper = new RemoteHeapWriteBatchWrapper(
 			backend.syncRemClient,
@@ -163,6 +169,10 @@ class RemoteHeapMapState<K, N, UK, UV>
 
 	@Override
 	public void remove(UK userKey) throws IOException {
+		LOG.debug(
+			"RemoteHeapMapState remove user key {}  namespace {}",
+			userKey,
+			currentNamespace);
 		byte[] rawKeyBytes = serializeCurrentKeyWithGroupAndNamespacePlusUserKey(
 			userKey,
 			userKeySerializer);
@@ -174,6 +184,10 @@ class RemoteHeapMapState<K, N, UK, UV>
 		byte[] rawKeyBytes = serializeCurrentKeyWithGroupAndNamespacePlusUserKey(
 			userKey,
 			userKeySerializer);
+		LOG.debug(
+			"RemoteHeapMapState contains user key {}  namespace {}",
+			userKey,
+			currentNamespace);
 		return backend.syncRemClient.hexists(kvStateInfo.nameBytes, rawKeyBytes);
 	}
 

@@ -16,6 +16,7 @@ import javax.annotation.Nullable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -253,6 +254,18 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 	}
 
 	@Override
+	public List<byte[]> lrange(byte[] key, int lIndex, int rIndex) {
+		try {
+			return commands.lrange(key, lIndex, rIndex).toCompletableFuture().get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value) {
 		commands.setAutoFlushCommands(false);
 		cachedFutures.add(commands.hset(key, field, value));
@@ -380,6 +393,11 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 	@Override
 	public CompletableFuture<Long> lpushAsync(byte[] key, byte[]... strings) {
 		return commands.lpush(key, strings).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<List<byte[]>> lrangeAsync(byte[] key, int lIndex, int rIndex) {
+		return commands.lrange(key, lIndex, rIndex).toCompletableFuture();
 	}
 
 	@Nullable

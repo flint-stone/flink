@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -113,6 +114,11 @@ public class JedisClusterSyncClient implements RemoteKVSyncClient {
 
 	@Override
 	public Long lpush(byte[] key, byte[]... strings) { return db.lpush(key, strings); }
+
+	@Override
+	public List<byte[]> lrange(byte[] key, int lIndex, int rIndex) {
+		return db.lrange(key, lIndex, rIndex);
+	}
 
 	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value){

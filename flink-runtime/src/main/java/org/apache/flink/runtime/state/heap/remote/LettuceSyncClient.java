@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -118,6 +119,11 @@ public class LettuceSyncClient implements RemoteKVSyncClient {
 	@Override
 	public Long lpush(byte[] key, byte[]... strings) {
 		return commands.lpush(key, strings);
+	}
+
+	@Override
+	public List<byte[]> lrange(byte[] key, int lIndex, int rIndex) {
+		return commands.lrange(key, lIndex, rIndex);
 	}
 
 	@Override

@@ -29,6 +29,9 @@ import org.apache.flink.queryablestate.client.state.serialization.KvStateSeriali
 import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +46,7 @@ import java.util.List;
 class HeapListState<K, N, V>
 	extends AbstractHeapMergingState<K, N, V, List<V>, Iterable<V>>
 	implements InternalListState<K, N, V> {
+	private static final Logger LOG = LoggerFactory.getLogger(HeapListState.class);
 	/**
 	 * Creates a new key/value state for the given hash map of key/value pairs.
 	 *
@@ -59,6 +63,9 @@ class HeapListState<K, N, V>
 		TypeSerializer<N> namespaceSerializer,
 		List<V> defaultValue) {
 		super(stateTable, keySerializer, valueSerializer, namespaceSerializer, defaultValue);
+		LOG.debug(
+			"HeapListState create state  namespace {} thread {}",
+			currentNamespace, Thread.currentThread().getName());
 	}
 
 	@Override
@@ -82,7 +89,12 @@ class HeapListState<K, N, V>
 
 	@Override
 	public Iterable<V> get() {
-		return getInternal();
+		Iterable<V> ret = getInternal();
+		LOG.debug(
+			"HeapListState get value state {} namespace {}",
+			ret,
+			currentNamespace);
+		return ret;
 	}
 
 	@Override
@@ -95,9 +107,16 @@ class HeapListState<K, N, V>
 		List<V> list = map.get(namespace);
 
 		if (list == null) {
+			LOG.debug(
+				"HeapListState add list empty create list namespace {}",
+				currentNamespace);
 			list = new ArrayList<>();
 			map.put(namespace, list);
 		}
+		LOG.debug(
+			"HeapListState add value state {} namespace {}",
+			value,
+			currentNamespace);
 		list.add(value);
 	}
 
@@ -163,7 +182,10 @@ class HeapListState<K, N, V>
 			Preconditions.checkNotNull(v, "You cannot add null to a ListState.");
 			newStateList.add(v);
 		}
-
+		LOG.debug(
+			"HeapListState update value state {} namespace {}",
+			newStateList,
+			currentNamespace);
 		stateTable.put(currentNamespace, newStateList);
 	}
 
@@ -172,6 +194,10 @@ class HeapListState<K, N, V>
 		Preconditions.checkNotNull(values, "List of values to add cannot be null.");
 
 		if (!values.isEmpty()) {
+			LOG.debug(
+				"HeapListState addAll values {} namespace {}",
+				values,
+				currentNamespace);
 			stateTable.transform(currentNamespace, values, (previousState, value) -> {
 				if (previousState == null) {
 					previousState = new ArrayList<>();
@@ -190,6 +216,9 @@ class HeapListState<K, N, V>
 		StateDescriptor<S, SV> stateDesc,
 		StateTable<K, N, SV> stateTable,
 		TypeSerializer<K> keySerializer) {
+		LOG.debug(
+			"HeapListState create stateDesc {}",
+			stateDesc);
 		return (IS) new HeapListState<>(
 			(StateTable<K, N, List<E>>) stateTable,
 			keySerializer,

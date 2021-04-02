@@ -131,11 +131,33 @@ class RemoteHeapListState<K, N, V>
 	public List<V> getInternal() {
 		try {
 			byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
-			byte[] valueBytes = backend.syncRemClient.get(key);
-			return deserializeList(valueBytes);
+			List<byte[]> valueBytes = backend.syncRemClient.lrange(key, 0, -1);
+			return deserializeListByItem(valueBytes);
 		} catch (Exception e) {
 			throw new FlinkRuntimeException("Error while retrieving data from remote heap", e);
 		}
+	}
+
+	private List<V> deserializeListByItem(
+		List<byte[]> valueBytesList) {
+		if (valueBytesList == null) {
+			return null;
+		}
+
+
+		List<V> result = new ArrayList<>();
+
+		for (byte[] valueBytes : valueBytesList){
+			dataInputView.setBuffer(valueBytes);
+			try {
+				V value = elementSerializer.deserialize(dataInputView);
+				result.add(value);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return result;
 	}
 
 	private List<V> deserializeList(

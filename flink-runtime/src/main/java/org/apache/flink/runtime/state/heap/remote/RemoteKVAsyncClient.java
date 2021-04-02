@@ -5,6 +5,7 @@ import io.lettuce.core.TransactionResult;
 import javax.annotation.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -41,6 +42,8 @@ public interface RemoteKVAsyncClient extends RemoteKVClient {
 	CompletableFuture<Long> rpushAsync(byte[] key, byte[]... strings);
 
 	CompletableFuture<Long> lpushAsync(byte[] key, byte[]... strings);
+
+	CompletableFuture<List<byte[]>> lrangeAsync(byte[]key, int lIndex, int rIndex);
 
 	@Nullable
 	CompletableFuture<String> getAndSetAsync(byte[] key, byte[] value);

@@ -24,6 +24,9 @@ import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.runtime.state.internal.InternalValueState;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Heap-backed partitioned {@link ValueState} that is snapshotted into files.
  *
@@ -35,6 +38,7 @@ class HeapValueState<K, N, V>
 	extends AbstractHeapState<K, N, V>
 	implements InternalValueState<K, N, V> {
 
+	private static final Logger LOG = LoggerFactory.getLogger(HeapValueState.class);
 	/**
 	 * Creates a new key/value state for the given hash map of key/value pairs.
 	 *
@@ -51,6 +55,9 @@ class HeapValueState<K, N, V>
 		TypeSerializer<N> namespaceSerializer,
 		V defaultValue) {
 		super(stateTable, keySerializer, valueSerializer, namespaceSerializer, defaultValue);
+		LOG.debug(
+			"HeapValueState create state  namespace {} thread {}",
+			currentNamespace, Thread.currentThread().getName());
 	}
 
 	@Override
@@ -76,6 +83,11 @@ class HeapValueState<K, N, V>
 			return getDefaultValue();
 		}
 
+		LOG.debug(
+			"HeapValueState retrieve value state {} namespace {}",
+			result,
+			currentNamespace);
+
 		return result;
 	}
 
@@ -86,7 +98,10 @@ class HeapValueState<K, N, V>
 			clear();
 			return;
 		}
-
+		LOG.debug(
+			"HeapValueState update value state {} namespace {}",
+			value,
+			currentNamespace);
 		stateTable.put(currentNamespace, value);
 	}
 

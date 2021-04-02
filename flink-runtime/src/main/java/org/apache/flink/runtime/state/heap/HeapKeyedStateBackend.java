@@ -278,6 +278,11 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
 				stateDesc.getClass(), this.getClass());
 			throw new FlinkRuntimeException(message);
 		}
+		LOG.debug("HeapKeyedStateBackend: createInternalState {} desc {} default {} queryable state name {}",
+			stateDesc.getName(),
+			stateDesc,
+			stateDesc.getDefaultValue(),
+			stateDesc.getQueryableStateName());
 		StateTable<K, N, SV> stateTable = tryRegisterStateTable(
 			namespaceSerializer, stateDesc, getStateSnapshotTransformFactory(stateDesc, snapshotTransformFactory));
 		return stateFactory.createState(stateDesc, stateTable, getKeySerializer());
