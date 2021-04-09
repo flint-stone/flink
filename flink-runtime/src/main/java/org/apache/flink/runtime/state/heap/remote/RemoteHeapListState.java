@@ -266,18 +266,21 @@ class RemoteHeapListState<K, N, V>
 	@Override
 	public void updateInternal(List<V> valueToStore) throws Exception {
 		Preconditions.checkNotNull(valueToStore, "List of values to add cannot be null.");
-
-		if (!valueToStore.isEmpty()) {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		backend.syncRemClient.del(key);
+//		if (!valueToStore.isEmpty()) {
+		for (V value : valueToStore) {
 			try {
-				backend.syncRemClient.lpush(
-					serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
-					serializeValueList(valueToStore, elementSerializer, DELIMITER));
+				backend.syncRemClient.rpush(
+					key,serializeValue(value, elementSerializer));
+					//serializeValueList(valueToStore, elementSerializer, DELIMITER));
 			} catch (Exception e) {
 				throw new FlinkRuntimeException("Error while updating data to REM", e);
 			}
-		} else {
-			clear();
 		}
+//		} else {
+//			clear();
+//		}
 	}
 
 	@Override
