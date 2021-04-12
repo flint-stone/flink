@@ -75,6 +75,21 @@ public class SimpleVersionedListState<T> implements ListState<T> {
 	}
 
 	@Override
+	public T getIndex(int index) throws Exception {
+		throw new FlinkRuntimeException("SimpleVersionedListState getIndex Not Implemented.");
+	}
+
+	@Override
+	public T pollFirst() throws Exception {
+		throw new FlinkRuntimeException("SimpleVersionedListState pollFirst Not Implemented.");
+	}
+
+	@Override
+	public T pollLast() throws Exception {
+		throw new FlinkRuntimeException("SimpleVersionedListState pollLast Not Implemented.");
+	}
+
+	@Override
 	public Iterable<T> get() throws Exception {
 		final Iterable<byte[]> rawIterable = rawState.get();
 		final SimpleVersionedSerializer<T> serializer = this.serializer;

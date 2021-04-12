@@ -102,6 +102,21 @@ public class JedisSyncClient implements RemoteKVSyncClient {
 	}
 
 	@Override
+	public byte[] lindex(byte[] key, int index) {
+		return db.lindex(key, index);
+	}
+
+	@Override
+	public byte[] lpop(byte[] key) {
+		return db.lpop(key);
+	}
+
+	@Override
+	public byte[] rpop(byte[] key) {
+		return new byte[0];
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value){
 		pipeline.hset(key, field, value);
 	}

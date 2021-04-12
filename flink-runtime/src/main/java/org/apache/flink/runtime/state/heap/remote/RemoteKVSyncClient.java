@@ -40,7 +40,13 @@ public interface RemoteKVSyncClient extends RemoteKVClient {
 
 	Long lpush(byte[] key, byte[]... strings);
 
-	List<byte[]> lrange(byte[]key, int lIndex, int rIndex);
+	List<byte[]> lrange(byte[] key, int lIndex, int rIndex);
+
+	byte[] lindex(byte[] key, int index);
+
+	byte[] lpop(byte[] key);
+
+	byte[] rpop(byte[] key);
 
 	void pipelineHSet(byte[] key, byte[] field, byte[] value);
 

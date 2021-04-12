@@ -127,6 +127,21 @@ public class LettuceSyncClient implements RemoteKVSyncClient {
 	}
 
 	@Override
+	public byte[] lindex(byte[] key, int index) {
+		return commands.lindex(key, index);
+	}
+
+	@Override
+	public byte[] lpop(byte[] key) {
+		return commands.lpop(key);
+	}
+
+	@Override
+	public byte[] rpop(byte[] key) {
+		return commands.rpop(key);
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value) {
 		try {
 			throw new Exception("pipelineHSet Not Implemented.");

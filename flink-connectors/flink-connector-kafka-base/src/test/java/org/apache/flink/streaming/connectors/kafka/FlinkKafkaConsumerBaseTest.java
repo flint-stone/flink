@@ -62,6 +62,7 @@ import org.apache.flink.streaming.util.MockStreamingRuntimeContext;
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkException;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.SerializedValue;
@@ -1297,6 +1298,21 @@ public class FlinkKafkaConsumerBaseTest extends TestLogger {
 
 				list.addAll(values);
 			}
+		}
+
+		@Override
+		public T getIndex(int index) throws Exception {
+			throw new FlinkRuntimeException("TestingListState getIndex Not Implemented.");
+		}
+
+		@Override
+		public T pollFirst() throws Exception {
+			throw new FlinkRuntimeException("TestingListState pollFirst Not Implemented.");
+		}
+
+		@Override
+		public T pollLast() throws Exception {
+			throw new FlinkRuntimeException("TestingListState pollLast Not Implemented.");
 		}
 	}
 

@@ -267,6 +267,42 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	}
 
 	@Override
+	public byte[] lindex(byte[] key, int index) {
+		try {
+			return commands.lindex(key, index).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] lpop(byte[] key) {
+		try {
+			return commands.lpop(key).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] rpop(byte[] key) {
+		try {
+			return commands.rpop(key).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value) {
 		commands.setAutoFlushCommands(false);
 		cachedFutures.add(commands.hset(key, field, value));

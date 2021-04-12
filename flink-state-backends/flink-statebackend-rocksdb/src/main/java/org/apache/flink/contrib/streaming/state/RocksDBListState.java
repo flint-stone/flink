@@ -242,6 +242,24 @@ class RocksDBListState<K, N, V>
 	}
 
 	@Override
+	public V getIndex(int index) throws Exception {
+		List<V> list = getInternal();
+		return list.get(index);
+	}
+
+	@Override
+	public V pollFirst() throws Exception {
+		List<V> list = getInternal();
+		return list.remove(0);
+	}
+
+	@Override
+	public V pollLast() throws Exception {
+		List<V> list = getInternal();
+		return list.remove(0);
+	}
+
+	@Override
 	public void migrateSerializedValue(
 			DataInputDeserializer serializedOldValueInput,
 			DataOutputSerializer serializedMigratedValueOutput,

@@ -68,4 +68,11 @@ public interface ListState<T> extends MergingState<T, Iterable<T>> {
 	 * @throws Exception The method may forward exception thrown internally (by I/O or functions).
 	 */
 	void addAll(List<T> values) throws Exception;
+
+	T getIndex(int index) throws Exception;
+
+
+	T pollFirst() throws Exception;
+
+	T pollLast() throws Exception;
 }

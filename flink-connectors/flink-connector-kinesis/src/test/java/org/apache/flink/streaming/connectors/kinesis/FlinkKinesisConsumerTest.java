@@ -59,6 +59,7 @@ import org.apache.flink.streaming.connectors.kinesis.util.RecordEmitter;
 import org.apache.flink.streaming.connectors.kinesis.util.WatermarkTracker;
 import org.apache.flink.streaming.util.AbstractStreamOperatorTestHarness;
 import org.apache.flink.streaming.util.CollectingSourceContext;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.TestLogger;
 
 import org.apache.flink.shaded.guava18.com.google.common.collect.Lists;
@@ -648,6 +649,21 @@ public class FlinkKinesisConsumerTest extends TestLogger {
 			if (values != null) {
 				list.addAll(values);
 			}
+		}
+
+		@Override
+		public T getIndex(int index) throws Exception {
+			throw new FlinkRuntimeException("TestingListState getIndex Not Implemented.");
+		}
+
+		@Override
+		public T pollFirst() throws Exception {
+			throw new FlinkRuntimeException("TestingListState pollFirst Not Implemented.");
+		}
+
+		@Override
+		public T pollLast() throws Exception {
+			throw new FlinkRuntimeException("TestingListState pollLast Not Implemented.");
 		}
 	}
 

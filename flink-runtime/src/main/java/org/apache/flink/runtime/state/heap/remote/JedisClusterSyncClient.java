@@ -121,6 +121,21 @@ public class JedisClusterSyncClient implements RemoteKVSyncClient {
 	}
 
 	@Override
+	public byte[] lindex(byte[] key, int index) {
+		return db.lindex(key, index);
+	}
+
+	@Override
+	public byte[] lpop(byte[] key) {
+		return db.lpop(key);
+	}
+
+	@Override
+	public byte[] rpop(byte[] key) {
+		return db.rpop(key);
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value){
 		try {
 			throw new Exception("Pipeline Operator Not Supported For Jedis Cluster");

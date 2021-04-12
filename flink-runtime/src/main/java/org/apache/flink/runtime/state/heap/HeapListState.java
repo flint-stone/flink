@@ -211,6 +211,24 @@ class HeapListState<K, N, V>
 		}
 	}
 
+	@Override
+	public V getIndex(int index) throws Exception {
+		List<V> ret = stateTable.get(currentNamespace);
+		return ret.get(index);
+	}
+
+	@Override
+	public V pollFirst() throws Exception {
+		List<V> ret = stateTable.get(currentNamespace);
+		return ret.remove(0);
+	}
+
+	@Override
+	public V pollLast() throws Exception {
+		List<V> ret = stateTable.get(currentNamespace);
+		return ret.remove(ret.size()-1);
+	}
+
 	@SuppressWarnings("unchecked")
 	static <E, K, N, SV, S extends State, IS extends S> IS create(
 		StateDescriptor<S, SV> stateDesc,

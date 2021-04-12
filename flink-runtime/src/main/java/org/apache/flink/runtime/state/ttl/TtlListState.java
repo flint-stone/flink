@@ -21,6 +21,7 @@ package org.apache.flink.runtime.state.ttl;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.base.ListSerializer;
 import org.apache.flink.runtime.state.internal.InternalListState;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -58,6 +59,21 @@ class TtlListState<K, N, T> extends
 		accessCallback.run();
 		Preconditions.checkNotNull(values, "List of values to add cannot be null.");
 		original.addAll(withTs(values));
+	}
+
+	@Override
+	public T getIndex(int index) throws Exception {
+		throw new FlinkRuntimeException("TtlListState getIndex Not Implemented.");
+	}
+
+	@Override
+	public T pollFirst() throws Exception {
+		throw new FlinkRuntimeException("TtlListState pollFirst Not Implemented.");
+	}
+
+	@Override
+	public T pollLast() throws Exception {
+		throw new FlinkRuntimeException("TtlListState pollLast Not Implemented.");
 	}
 
 	@Override

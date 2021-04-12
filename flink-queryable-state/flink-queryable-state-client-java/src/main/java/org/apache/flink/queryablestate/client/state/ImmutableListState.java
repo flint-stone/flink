@@ -23,6 +23,7 @@ import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.State;
 import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.queryablestate.client.state.serialization.KvStateSerializer;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
 import java.io.IOException;
@@ -66,6 +67,21 @@ public final class ImmutableListState<V> extends ImmutableState implements ListS
 	@Override
 	public void addAll(List<V> values) {
 		throw MODIFICATION_ATTEMPT_ERROR;
+	}
+
+	@Override
+	public V getIndex(int index) throws Exception {
+		throw new FlinkRuntimeException("ExternalListState getIndex Not Implemented.");
+	}
+
+	@Override
+	public V pollFirst() throws Exception {
+		throw new FlinkRuntimeException("ExternalListState pollFirst Not Implemented.");
+	}
+
+	@Override
+	public V pollLast() throws Exception {
+		throw new FlinkRuntimeException("ExternalListState pollLast Not Implemented.");
 	}
 
 	@SuppressWarnings("unchecked")

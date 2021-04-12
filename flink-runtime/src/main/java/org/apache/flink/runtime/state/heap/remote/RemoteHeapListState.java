@@ -298,6 +298,48 @@ class RemoteHeapListState<K, N, V>
 		}
 	}
 
+	@Override
+	public V getIndex(int index) throws Exception {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		byte[] valueBytes = backend.syncRemClient.lindex(key, index);
+		dataInputView.setBuffer(valueBytes);
+		V value = null;
+		try {
+			value = elementSerializer.deserialize(dataInputView);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return value;
+	}
+
+	@Override
+	public V pollFirst() throws Exception {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		byte[] valueBytes = backend.syncRemClient.lpop(key);
+		dataInputView.setBuffer(valueBytes);
+		V value = null;
+		try {
+			value = elementSerializer.deserialize(dataInputView);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return value;
+	}
+
+	@Override
+	public V pollLast() throws Exception {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		byte[] valueBytes = backend.syncRemClient.rpop(key);
+		dataInputView.setBuffer(valueBytes);
+		V value = null;
+		try {
+			value = elementSerializer.deserialize(dataInputView);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return value;
+	}
+
 	@SuppressWarnings("unchecked")
 	static <E, K, N, SV, S extends State, IS extends S> IS create(
 		StateDescriptor<S, SV> stateDesc,
