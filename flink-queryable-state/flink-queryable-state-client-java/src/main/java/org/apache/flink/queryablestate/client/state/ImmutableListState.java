@@ -76,12 +76,17 @@ public final class ImmutableListState<V> extends ImmutableState implements ListS
 
 	@Override
 	public V pollFirst() throws Exception {
-		throw new FlinkRuntimeException("ExternalListState pollFirst Not Implemented.");
+		throw MODIFICATION_ATTEMPT_ERROR;
 	}
 
 	@Override
 	public V pollLast() throws Exception {
-		throw new FlinkRuntimeException("ExternalListState pollLast Not Implemented.");
+		throw MODIFICATION_ATTEMPT_ERROR;
+	}
+
+	@Override
+	public Long size() {
+		return (long)listState.size();
 	}
 
 	@SuppressWarnings("unchecked")

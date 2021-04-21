@@ -260,6 +260,11 @@ class RocksDBListState<K, N, V>
 	}
 
 	@Override
+	public Long size() throws Exception {
+		return (long) getInternal().size();
+	}
+
+	@Override
 	public void migrateSerializedValue(
 			DataInputDeserializer serializedOldValueInput,
 			DataOutputSerializer serializedMigratedValueOutput,

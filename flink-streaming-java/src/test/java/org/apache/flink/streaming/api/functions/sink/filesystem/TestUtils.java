@@ -32,8 +32,6 @@ import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 
 import org.apache.commons.io.FileUtils;
 
-import org.apache.flink.util.FlinkRuntimeException;
-
 import org.junit.Assert;
 
 import javax.annotation.Nonnull;
@@ -398,17 +396,22 @@ public class TestUtils {
 
 		@Override
 		public T getIndex(int index) throws Exception {
-			throw new FlinkRuntimeException("MockListState getIndex Not Implemented.");
+			return backingList.get(index);
 		}
 
 		@Override
 		public T pollFirst() throws Exception {
-			throw new FlinkRuntimeException("MockListState pollFirst Not Implemented.");
+			return backingList.remove(0);
 		}
 
 		@Override
 		public T pollLast() throws Exception {
-			throw new FlinkRuntimeException("MockListState pollLast Not Implemented.");
+			return backingList.remove(-1);
+		}
+
+		@Override
+		public Long size() {
+			return (long)backingList.size();
 		}
 
 		@Override

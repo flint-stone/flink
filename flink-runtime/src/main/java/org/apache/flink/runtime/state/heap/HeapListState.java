@@ -226,7 +226,12 @@ class HeapListState<K, N, V>
 	@Override
 	public V pollLast() throws Exception {
 		List<V> ret = stateTable.get(currentNamespace);
-		return ret.remove(ret.size()-1);
+		return ret.remove(-1);
+	}
+
+	@Override
+	public Long size() {
+		return (long)stateTable.get(currentNamespace).size();
 	}
 
 	@SuppressWarnings("unchecked")

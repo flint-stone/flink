@@ -303,6 +303,18 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	}
 
 	@Override
+	public Long llen(byte[] key) {
+		try {
+			return commands.llen(key).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value) {
 		commands.setAutoFlushCommands(false);
 		cachedFutures.add(commands.hset(key, field, value));

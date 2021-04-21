@@ -117,6 +117,11 @@ public class JedisSyncClient implements RemoteKVSyncClient {
 	}
 
 	@Override
+	public Long llen(byte[] key) {
+		return db.llen(key);
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value){
 		pipeline.hset(key, field, value);
 	}

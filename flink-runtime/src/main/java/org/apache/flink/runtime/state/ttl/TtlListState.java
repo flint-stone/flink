@@ -77,6 +77,11 @@ class TtlListState<K, N, T> extends
 	}
 
 	@Override
+	public Long size() throws Exception {
+		return original.size();
+	}
+
+	@Override
 	public Iterable<T> get() throws Exception {
 		accessCallback.run();
 		Iterable<TtlValue<T>> ttlValue = original.get();

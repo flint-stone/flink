@@ -62,6 +62,11 @@ class MockInternalListState<K, N, T>
 	}
 
 	@Override
+	public Long size() {
+		return (long)getInternal().size();
+	}
+
+	@Override
 	List<T> mergeState(List<T> acc, List<T> nAcc) {
 		acc = new ArrayList<>(acc);
 		acc.addAll(nAcc);

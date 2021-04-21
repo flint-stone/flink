@@ -81,4 +81,9 @@ class UserFacingListState<T> implements ListState<T> {
 	public T pollLast() throws Exception {
 		return originalState.pollLast();
 	}
+
+	@Override
+	public Long size() throws Exception {
+		return originalState.size();
+	}
 }

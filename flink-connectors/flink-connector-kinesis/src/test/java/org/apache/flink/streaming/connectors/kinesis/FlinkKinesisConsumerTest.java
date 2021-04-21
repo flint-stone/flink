@@ -653,17 +653,22 @@ public class FlinkKinesisConsumerTest extends TestLogger {
 
 		@Override
 		public T getIndex(int index) throws Exception {
-			throw new FlinkRuntimeException("TestingListState getIndex Not Implemented.");
+			return list.get(index);
 		}
 
 		@Override
 		public T pollFirst() throws Exception {
-			throw new FlinkRuntimeException("TestingListState pollFirst Not Implemented.");
+			return list.remove(0);
 		}
 
 		@Override
 		public T pollLast() throws Exception {
-			throw new FlinkRuntimeException("TestingListState pollLast Not Implemented.");
+			return list.remove(-1);
+		}
+
+		@Override
+		public Long size() throws Exception {
+			return (long)list.size();
 		}
 	}
 

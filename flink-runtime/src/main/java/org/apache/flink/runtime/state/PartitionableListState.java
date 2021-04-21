@@ -22,7 +22,6 @@ import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.core.fs.FSDataOutputStream;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
-import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
 import java.io.IOException;
@@ -136,16 +135,21 @@ public final class PartitionableListState<S> implements ListState<S> {
 
 	@Override
 	public S getIndex(int index) throws Exception {
-		throw new FlinkRuntimeException("PartitionableListState getIndex Not Implemented.");
+		return internalList.get(index);
 	}
 
 	@Override
 	public S pollFirst() throws Exception {
-		throw new FlinkRuntimeException("PartitionableListState pollFirst Not Implemented.");
+		return internalList.remove(0);
 	}
 
 	@Override
 	public S pollLast() throws Exception {
-		throw new FlinkRuntimeException("PartitionableListState pollLast Not Implemented.");
+		return internalList.remove(-1);
+	}
+
+	@Override
+	public Long size() {
+		return (long)internalList.size();
 	}
 }

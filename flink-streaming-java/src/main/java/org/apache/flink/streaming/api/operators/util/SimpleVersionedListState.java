@@ -90,6 +90,11 @@ public class SimpleVersionedListState<T> implements ListState<T> {
 	}
 
 	@Override
+	public Long size() throws Exception {
+		return rawState.size();
+	}
+
+	@Override
 	public Iterable<T> get() throws Exception {
 		final Iterable<byte[]> rawIterable = rawState.get();
 		final SimpleVersionedSerializer<T> serializer = this.serializer;
