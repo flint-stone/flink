@@ -67,4 +67,5 @@ public interface ValueState<T> extends State {
 	 * @throws IOException Thrown if the system cannot access the state.
 	 */
 	void update(T value) throws IOException;
+
 }

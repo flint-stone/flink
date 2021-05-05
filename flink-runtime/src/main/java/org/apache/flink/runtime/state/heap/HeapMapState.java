@@ -96,11 +96,6 @@ class HeapMapState<K, N, UK, UV>
 			return null;
 		}
 		UV value = userMap.get(userKey);
-		LOG.debug(
-			"HeapMapState get value state {} userKey {} namespace {}",
-			value,
-			userKey,
-			currentNamespace);
 
 		return value;
 	}
@@ -113,11 +108,7 @@ class HeapMapState<K, N, UK, UV>
 			userMap = new HashMap<>();
 			stateTable.put(currentNamespace, userMap);
 		}
-		LOG.debug(
-			"HeapMapState put value state {} userKey {} namespace {}",
-			userValue,
-			userKey,
-			currentNamespace);
+
 		userMap.put(userKey, userValue);
 	}
 
@@ -130,11 +121,6 @@ class HeapMapState<K, N, UK, UV>
 			userMap = new HashMap<>();
 			stateTable.put(currentNamespace, userMap);
 		}
-
-		LOG.debug(
-			"HeapMapState putAll value map size {}  namespace {}",
-			value.size(),
-			currentNamespace);
 
 		userMap.putAll(value);
 	}
@@ -161,10 +147,6 @@ class HeapMapState<K, N, UK, UV>
 	@Override
 	public boolean contains(UK userKey) {
 		Map<UK, UV> userMap = stateTable.get(currentNamespace);
-		LOG.debug(
-			"HeapMapState contains user key {}  namespace {}",
-			userKey,
-			currentNamespace);
 		return userMap != null && userMap.containsKey(userKey);
 	}
 

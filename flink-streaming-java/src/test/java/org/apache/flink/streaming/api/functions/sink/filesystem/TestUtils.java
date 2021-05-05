@@ -31,7 +31,6 @@ import org.apache.flink.streaming.api.operators.StreamSink;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 
 import org.apache.commons.io.FileUtils;
-
 import org.junit.Assert;
 
 import javax.annotation.Nonnull;

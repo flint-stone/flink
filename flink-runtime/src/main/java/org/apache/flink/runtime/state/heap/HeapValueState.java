@@ -83,11 +83,6 @@ class HeapValueState<K, N, V>
 			return getDefaultValue();
 		}
 
-		LOG.debug(
-			"HeapValueState retrieve value state {} namespace {}",
-			result,
-			currentNamespace);
-
 		return result;
 	}
 
@@ -98,10 +93,7 @@ class HeapValueState<K, N, V>
 			clear();
 			return;
 		}
-		LOG.debug(
-			"HeapValueState update value state {} namespace {}",
-			value,
-			currentNamespace);
+
 		stateTable.put(currentNamespace, value);
 	}
 

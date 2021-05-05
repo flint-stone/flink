@@ -405,7 +405,7 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	}
 
 	@Override
-	public CompletableFuture<byte[]>  getAsync(byte[] key) {
+	public CompletableFuture<byte[]> getAsync(byte[] key) {
 		return commands.get(key).toCompletableFuture();
 	}
 
@@ -417,7 +417,6 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 
 	@Override
 	public CompletableFuture<Long> incrAsync(byte[] key) {
-		LOG.info("incrAsync {}", key);
 		return commands.incr(key).toCompletableFuture();
 	}
 

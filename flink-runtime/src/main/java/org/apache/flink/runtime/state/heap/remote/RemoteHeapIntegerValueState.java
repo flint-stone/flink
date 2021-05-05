@@ -18,8 +18,6 @@
 
 package org.apache.flink.runtime.state.heap.remote;
 
-import io.lettuce.core.TransactionResult;
-
 import org.apache.flink.api.common.state.State;
 import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
@@ -27,12 +25,9 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.runtime.state.RegisteredKeyValueStateBackendMetaInfo;
 import org.apache.flink.runtime.state.internal.InternalIntegerValueState;
 import org.apache.flink.util.FlinkRuntimeException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * Heap-backed partitioned {@link ValueState} that is snapshotted into files.
@@ -144,11 +139,6 @@ class RemoteHeapIntegerValueState<K, N>
 
 	@Override
 	public Long incr() {
-		LOG.debug(
-			"RemoteHeapIntegerValueState incr retrieve namespace {} key {} tid {}",
-			currentNamespace,
-			backend.getCurrentKey(), Thread.currentThread().getName());
-//		String multi = (String) backend.syncRemClient.multi();
 		Long ret = 0L;
 		try {
 			byte[] serializedKey = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
@@ -160,11 +150,6 @@ class RemoteHeapIntegerValueState<K, N>
 				dataInputView.setBuffer(valueBytes);
 				Long value =
 					valueSerializer.deserialize(dataInputView);
-				LOG.debug(
-					"RemoteHeapIntegerValueState incr retrieve value state {} namespace {} key {}",
-					value,
-					currentNamespace,
-					backend.getCurrentKey());
 				ret = value;
 			}
 			ret++;
@@ -176,7 +161,6 @@ class RemoteHeapIntegerValueState<K, N>
 				ret,
 				currentNamespace,
 				backend.getCurrentKey());
-//			return value;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

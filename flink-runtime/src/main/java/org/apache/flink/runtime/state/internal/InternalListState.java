@@ -59,9 +59,7 @@ public interface InternalListState<K, N, T> extends InternalMergingState<K, N, T
 	 */
 	void addAll(List<T> values) throws Exception;
 
-
 	T getIndex(int index) throws Exception;
-
 
 	T pollFirst() throws Exception;
 

@@ -51,11 +51,6 @@ class RemoteHeapListState<K, N, V>
 	/** Serializer for the values. */
 	private final TypeSerializer<V> elementSerializer;
 
-	/**
-	 * Separator of StringAppendTestOperator in RocksDB.
-	 */
-	private static final byte DELIMITER = ',';
-
 	private static final Logger LOG = LoggerFactory.getLogger(RemoteHeapListState.class);
 
 	/**
@@ -209,10 +204,6 @@ class RemoteHeapListState<K, N, V>
 	@Override
 	public void add(V value) {
 		Preconditions.checkNotNull(value, "You cannot add null to a ListState.");
-		LOG.debug(
-			"RemoteHeapListState add namespace {} key {} value {} tid {}",
-			currentNamespace,
-			backend.getCurrentKey(), value, Thread.currentThread().getName());
 		try {
 			backend.syncRemClient.rpush(
 				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
@@ -269,10 +260,6 @@ class RemoteHeapListState<K, N, V>
 
 	@Override
 	public void update(List<V> values) throws Exception {
-		LOG.debug(
-			"RemoteHeapListState update namespace {} key {} list {} tid {}",
-			currentNamespace,
-			backend.getCurrentKey(), values, Thread.currentThread().getName());
 		updateInternal(values);
 	}
 
@@ -288,7 +275,6 @@ class RemoteHeapListState<K, N, V>
 		Preconditions.checkNotNull(valueToStore, "List of values to add cannot be null.");
 		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
 		backend.syncRemClient.del(key);
-//		if (!valueToStore.isEmpty()) {
 		for (V value : valueToStore) {
 			try {
 				backend.syncRemClient.rpush(
@@ -298,9 +284,6 @@ class RemoteHeapListState<K, N, V>
 				throw new FlinkRuntimeException("Error while updating data to REM", e);
 			}
 		}
-//		} else {
-//			clear();
-//		}
 	}
 
 	@Override
@@ -309,9 +292,6 @@ class RemoteHeapListState<K, N, V>
 
 		if (!values.isEmpty()) {
 			try {
-//				backend.syncRemClient.rpush(
-//					serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
-//					serializeValueList(values, elementSerializer, DELIMITER));
 				byte[][] serializedValues = new byte[values.size()][];
 				for (int i=0; i < values.size(); i++){
 					serializedValues[i] = serializeValue(values.get(i), elementSerializer);
@@ -328,10 +308,6 @@ class RemoteHeapListState<K, N, V>
 
 	@Override
 	public V getIndex(int index) throws Exception {
-		LOG.debug(
-			"RemoteHeapListState getIndex namespace {} key {} index {} tid {}",
-			currentNamespace,
-			backend.getCurrentKey(), index, Thread.currentThread().getName());
 		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
 		byte[] valueBytes = backend.syncRemClient.lindex(key, index);
 		if (valueBytes == null) return null;
@@ -347,10 +323,6 @@ class RemoteHeapListState<K, N, V>
 
 	@Override
 	public V pollFirst() throws Exception {
-		LOG.debug(
-			"RemoteHeapListState pollFirst namespace {} key {} tid {}",
-			currentNamespace,
-			backend.getCurrentKey(), Thread.currentThread().getName());
 		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
 		byte[] valueBytes = backend.syncRemClient.lpop(key);
 		if (valueBytes == null) return null;
@@ -366,10 +338,6 @@ class RemoteHeapListState<K, N, V>
 
 	@Override
 	public V pollLast() throws Exception {
-		LOG.debug(
-			"RemoteHeapListState pollLast namespace {} key {} tid {}",
-			currentNamespace,
-			backend.getCurrentKey(), Thread.currentThread().getName());
 		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
 		byte[] valueBytes = backend.syncRemClient.rpop(key);
 		if (valueBytes == null) return null;
@@ -385,26 +353,13 @@ class RemoteHeapListState<K, N, V>
 
 	@Override
 	public void trim(int start, int end) throws Exception {
-		LOG.debug(
-			"RemoteHeapListState trim namespace {} key {} tid {} start {} end {}",
-			currentNamespace,
-			backend.getCurrentKey(), Thread.currentThread().getName(), start, end);
 		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
 		if(start < end) return;
 		String ret = backend.syncRemClient.ltrim(key, start, end);
-		LOG.debug(
-			"RemoteHeapListState trim complete namespace {} key {} tid {} start {} end {} ret {}",
-			currentNamespace,
-			backend.getCurrentKey(), Thread.currentThread().getName(), start, end, ret);
-		return;
 	}
 
 	@Override
 	public Long size() throws Exception {
-		LOG.debug(
-			"RemoteHeapListState pollLast namespace {} key {} size() tid {}",
-			currentNamespace,
-			backend.getCurrentKey(), Thread.currentThread().getName());
 		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
 		return backend.syncRemClient.llen(key);
 	}

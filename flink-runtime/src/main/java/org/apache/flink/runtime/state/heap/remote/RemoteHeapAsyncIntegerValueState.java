@@ -104,23 +104,11 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 					} catch (IOException e) {
 						try {
 							String maybe = serializer.deserialize(dataInputView);
-							LOG.debug(
-								"RemoteHeapAsyncValueState retrieve maybe state {} namespace {} valueBytes {} key {} thread {}",
-								maybe,
-								currentNamespace,
-								valueBytes,
-								backend.getCurrentKey(), Thread.currentThread().getName());
 						} catch (IOException ex) {
 							ex.printStackTrace();
 						}
 						e.printStackTrace();
 					}
-					LOG.debug(
-						"RemoteHeapAsyncValueState retrieve value state {} namespace {} valueBytes {} key {} thread {}",
-						value,
-						currentNamespace,
-						valueBytes,
-						backend.getCurrentKey(), Thread.currentThread().getName());
 					return value;
 				}
 			);
@@ -138,11 +126,6 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 		}
 
 		try {
-			LOG.debug(
-				"RemoteHeapAsyncValueState update to value state {} namespace {} key {} thread {}",
-				value,
-				currentNamespace,
-				backend.getCurrentKey(), Thread.currentThread().getName());
 			return backend.asyncRemClient.setAsync(
 				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
 				serializeValue(value));
@@ -168,12 +151,6 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 						value = getDefaultValue();
 					}
 					else{
-						LOG.debug(
-							"RemoteHeapAsyncValueState incr retrieve valueBytes {} multi {} namespace {}  key {} {} thread {}",
-							valueBytes,
-							multi,
-							currentNamespace,
-							backend.getCurrentKey(), serializedKey, Thread.currentThread().getName());
 						dataInputView.setBuffer(valueBytes);
 						value = null;
 						try {
@@ -181,27 +158,13 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 						} catch (Exception e) {
 							try {
 								String maybe = serializer.deserialize(dataInputView);
-								LOG.debug(
-									"RemoteHeapAsyncValueState retrieve maybe state {} multi {} namespace {} valueBytes {} key {} thread {}",
-									maybe,
-									multi,
-									currentNamespace,
-									valueBytes,
-									backend.getCurrentKey(), Thread.currentThread().getName());
 							} catch (IOException ex) {
 								ex.printStackTrace();
 							}
 							e.printStackTrace();
 						}
-
-						LOG.debug(
-							"RemoteHeapAsyncValueState incr retrieve value state {} valueBytes {} namespace {}  multi {} key {} {} thread {}",
-							value,
-							valueBytes,
-							currentNamespace,
-							multi,
-							backend.getCurrentKey(), serializedKey, Thread.currentThread().getName());
 					}
+
 					try {
 						byte[] keyBytes = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
 						value++;
@@ -210,25 +173,14 @@ class RemoteHeapAsyncIntegerValueState<K, N>
 							keyBytes,
 							serializeValue
 							);
-						LOG.debug(
-							"RemoteHeapAsyncValueState incr update value state {} {} namespace {} multi {} key {} {} thread {}",
-							value, serializeValue,
-							currentNamespace,
-							multi,
-							backend.getCurrentKey(), keyBytes, Thread.currentThread().getName());
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
+
 					return value;
 				}
 			);
 			TransactionResult result = backend.asyncRemClient.execAsync().get();
-			LOG.debug(
-				"RemoteHeapAsyncValueState incr transaction result {} namespace {} multi {} key {}  thread {}",
-				result,
-				currentNamespace,
-				multi,
-				backend.getCurrentKey(), Thread.currentThread().getName());
 			lock.unlock();
 
 		} catch (IOException e) {

@@ -44,11 +44,9 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 	@Override
 	public byte[] get(byte[] key) {
 		try {
-			LOG.debug("LettuceClient get start tid {}", Thread.currentThread().getName() );
 			CompletableFuture<byte[]> future = commands.get(key).toCompletableFuture();
 			commands.flushCommands();
 			byte[] ret = future.get();
-			LOG.debug("LettuceClient get end {} tid {}", ret, Thread.currentThread().getName());
 			return ret;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -62,9 +60,7 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 	@Override
 	public Object set(byte[] key, byte[] value) {
 		try {
-			LOG.debug("LettuceClient set start tid {}", Thread.currentThread().getName() );
 			String ret = commands.set(key, value).toCompletableFuture().get();
-			LOG.debug("LettuceClient set end {} tid {}", ret, Thread.currentThread().getName() );
 			return ret;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -89,9 +85,7 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 	@Override
 	public Object multi() {
 		try {
-			LOG.debug("LettuceClient multi start tid {}", Thread.currentThread().getName() );
 			String ret = commands.multi().get();
-			LOG.debug("LettuceClient multi end {} tid {}", ret, Thread.currentThread().getName() );
 			return ret;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -104,9 +98,7 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 	@Override
 	public Object exec() {
 		try {
-			LOG.debug("LettuceClient exec start tid {}", Thread.currentThread().getName() );
 			TransactionResult ret = commands.exec().get();
-			LOG.debug("LettuceClient exec end {} tid {}", ret, Thread.currentThread().getName());
 			return ret;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
