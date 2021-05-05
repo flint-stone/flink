@@ -260,6 +260,13 @@ class RocksDBListState<K, N, V>
 	}
 
 	@Override
+	public void trim(int start, int end) throws Exception {
+		List<V> list = getInternal();
+		list = list.subList(start, end);
+		update(list);
+	}
+
+	@Override
 	public Long size() throws Exception {
 		return (long) getInternal().size();
 	}

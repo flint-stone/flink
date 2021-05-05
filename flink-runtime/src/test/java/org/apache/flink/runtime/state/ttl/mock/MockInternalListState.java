@@ -62,6 +62,11 @@ class MockInternalListState<K, N, T>
 	}
 
 	@Override
+	public void trim(int start, int end) throws Exception {
+		update(getInternal().subList(start, end + 1));
+	}
+
+	@Override
 	public Long size() {
 		return (long)getInternal().size();
 	}

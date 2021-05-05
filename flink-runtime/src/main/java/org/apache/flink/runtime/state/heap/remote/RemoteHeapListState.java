@@ -384,6 +384,22 @@ class RemoteHeapListState<K, N, V>
 	}
 
 	@Override
+	public void trim(int start, int end) throws Exception {
+		LOG.debug(
+			"RemoteHeapListState trim namespace {} key {} tid {} start {} end {}",
+			currentNamespace,
+			backend.getCurrentKey(), Thread.currentThread().getName(), start, end);
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		if(start < end) return;
+		String ret = backend.syncRemClient.ltrim(key, start, end);
+		LOG.debug(
+			"RemoteHeapListState trim complete namespace {} key {} tid {} start {} end {} ret {}",
+			currentNamespace,
+			backend.getCurrentKey(), Thread.currentThread().getName(), start, end, ret);
+		return;
+	}
+
+	@Override
 	public Long size() throws Exception {
 		LOG.debug(
 			"RemoteHeapListState pollLast namespace {} key {} size() tid {}",

@@ -147,6 +147,11 @@ public class LettuceSyncClient implements RemoteKVSyncClient {
 	}
 
 	@Override
+	public String ltrim(byte[] key, int lIndex, int rIndex) {
+		return commands.ltrim(key, lIndex, rIndex);
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value) {
 		try {
 			throw new Exception("pipelineHSet Not Implemented.");

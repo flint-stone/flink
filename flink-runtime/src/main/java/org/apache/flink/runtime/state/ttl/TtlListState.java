@@ -77,6 +77,19 @@ class TtlListState<K, N, T> extends
 	}
 
 	@Override
+	public void trim(int start, int end) throws Exception {
+		accessCallback.run();
+		List<T> internalList = getInternal();
+		for(int i = 0; i <= start; i++){
+			internalList.remove(i);
+		}
+		for(int i = end + 1; i< internalList.size(); i++){
+			internalList.remove(i);
+		}
+		update(internalList);
+	}
+
+	@Override
 	public Long size() throws Exception {
 		return original.size();
 	}

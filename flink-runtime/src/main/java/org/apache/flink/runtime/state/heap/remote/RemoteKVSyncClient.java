@@ -50,6 +50,8 @@ public interface RemoteKVSyncClient extends RemoteKVClient {
 
 	Long llen(byte[] key);
 
+	String ltrim(byte[] key, int lIndex, int rIndex);
+
 	void pipelineHSet(byte[] key, byte[] field, byte[] value);
 
 	void pipelineHDel(byte[] key, byte[] field);

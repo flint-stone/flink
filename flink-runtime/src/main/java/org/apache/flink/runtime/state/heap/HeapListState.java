@@ -233,6 +233,12 @@ class HeapListState<K, N, V>
 	}
 
 	@Override
+	public void trim(int start, int end) throws Exception {
+		List<V> ret = stateTable.get(currentNamespace).subList(start, end + 1);
+		update(ret);
+	}
+
+	@Override
 	public Long size() {
 		return (long)stateTable.get(currentNamespace).size();
 	}

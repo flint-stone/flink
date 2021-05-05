@@ -76,5 +76,7 @@ public interface ListState<T> extends MergingState<T, Iterable<T>> {
 
 	T pollLast() throws Exception;
 
+	void trim(int start, int end) throws Exception;
+
 	Long size() throws Exception;
 }

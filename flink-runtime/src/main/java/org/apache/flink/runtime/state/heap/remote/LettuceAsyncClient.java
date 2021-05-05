@@ -314,6 +314,18 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 	}
 
 	@Override
+	public String ltrim(byte[] key, int lIndex, int rIndex) {
+		try {
+			return commands.ltrim(key, lIndex, rIndex).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value) {
 		commands.setAutoFlushCommands(false);
 		cachedFutures.add(commands.hset(key, field, value));
@@ -443,9 +455,15 @@ public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClie
 		return commands.lpush(key, strings).toCompletableFuture();
 	}
 
+
 	@Override
 	public CompletableFuture<List<byte[]>> lrangeAsync(byte[] key, int lIndex, int rIndex) {
 		return commands.lrange(key, lIndex, rIndex).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<String> ltrimAsync(byte[] key, int lIndex, int rIndex) {
+		return commands.ltrim(key, lIndex, rIndex).toCompletableFuture();
 	}
 
 	@Nullable

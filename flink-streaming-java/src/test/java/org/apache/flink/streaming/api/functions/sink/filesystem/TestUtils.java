@@ -410,6 +410,16 @@ public class TestUtils {
 		}
 
 		@Override
+		public void trim(int start, int end) throws Exception {
+			for(int i = 0; i <= start; i++){
+				backingList.remove(i);
+			}
+			for(int i = end + 1; i< backingList.size(); i++){
+				backingList.remove(i);
+			}
+		}
+
+		@Override
 		public Long size() {
 			return (long)backingList.size();
 		}

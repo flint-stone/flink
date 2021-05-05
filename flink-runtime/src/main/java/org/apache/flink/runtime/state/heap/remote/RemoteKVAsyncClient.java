@@ -45,6 +45,8 @@ public interface RemoteKVAsyncClient extends RemoteKVClient {
 
 	CompletableFuture<List<byte[]>> lrangeAsync(byte[]key, int lIndex, int rIndex);
 
+	CompletableFuture<String> ltrimAsync(byte[] key, int lIndex, int rIndex);
+
 	@Nullable
 	CompletableFuture<String> getAndSetAsync(byte[] key, byte[] value);
 }

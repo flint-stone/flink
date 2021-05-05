@@ -90,6 +90,11 @@ public class SimpleVersionedListState<T> implements ListState<T> {
 	}
 
 	@Override
+	public void trim(int start, int end) throws Exception {
+		rawState.trim(start, end);
+	}
+
+	@Override
 	public Long size() throws Exception {
 		return rawState.size();
 	}

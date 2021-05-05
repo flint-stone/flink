@@ -149,6 +149,16 @@ public final class PartitionableListState<S> implements ListState<S> {
 	}
 
 	@Override
+	public void trim(int start, int end) throws Exception {
+		for(int i = 0; i <= start; i++){
+			internalList.remove(i);
+		}
+		for(int i = end + 1; i< internalList.size(); i++){
+			internalList.remove(i);
+		}
+	}
+
+	@Override
 	public Long size() {
 		return (long)internalList.size();
 	}

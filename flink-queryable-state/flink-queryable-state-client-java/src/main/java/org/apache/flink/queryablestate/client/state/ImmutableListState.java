@@ -85,6 +85,11 @@ public final class ImmutableListState<V> extends ImmutableState implements ListS
 	}
 
 	@Override
+	public void trim(int start, int end) throws Exception {
+		throw MODIFICATION_ATTEMPT_ERROR;
+	}
+
+	@Override
 	public Long size() {
 		return (long)listState.size();
 	}

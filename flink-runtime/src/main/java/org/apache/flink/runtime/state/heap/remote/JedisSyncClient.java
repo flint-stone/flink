@@ -122,6 +122,11 @@ public class JedisSyncClient implements RemoteKVSyncClient {
 	}
 
 	@Override
+	public String ltrim(byte[] key, int lIndex, int rIndex) {
+		return db.ltrim(key, lIndex, rIndex);
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value){
 		pipeline.hset(key, field, value);
 	}

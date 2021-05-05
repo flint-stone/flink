@@ -83,6 +83,11 @@ class UserFacingListState<T> implements ListState<T> {
 	}
 
 	@Override
+	public void trim(int start, int end) throws Exception {
+		originalState.trim(start, end);
+	}
+
+	@Override
 	public Long size() throws Exception {
 		return originalState.size();
 	}

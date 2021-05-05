@@ -1316,6 +1316,16 @@ public class FlinkKafkaConsumerBaseTest extends TestLogger {
 		}
 
 		@Override
+		public void trim(int start, int end) throws Exception {
+			for(int i = 0; i <= start; i++){
+				list.remove(i);
+			}
+			for(int i = end + 1; i< list.size(); i++){
+				list.remove(i);
+			}
+		}
+
+		@Override
 		public Long size() throws Exception {
 			return (long)list.size();
 		}
