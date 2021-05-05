@@ -309,9 +309,17 @@ class RemoteHeapListState<K, N, V>
 
 		if (!values.isEmpty()) {
 			try {
+//				backend.syncRemClient.rpush(
+//					serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
+//					serializeValueList(values, elementSerializer, DELIMITER));
+				byte[][] serializedValues = new byte[values.size()][];
+				for (int i=0; i < values.size(); i++){
+					serializedValues[i] = serializeValue(values.get(i), elementSerializer);
+				}
+
 				backend.syncRemClient.rpush(
 					serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
-					serializeValueList(values, elementSerializer, DELIMITER));
+					serializedValues);
 			} catch (Exception e) {
 				throw new FlinkRuntimeException("Error while updating data to remote heap", e);
 			}
