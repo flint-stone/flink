@@ -3,6 +3,7 @@ package org.apache.flink.runtime.state.heap.remote;
 import javax.annotation.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public interface RemoteKVSyncClient extends RemoteKVClient {
@@ -11,6 +12,12 @@ public interface RemoteKVSyncClient extends RemoteKVClient {
 
 	@Nullable
 	Object set(byte[] key, byte[] value);
+
+	Long incr(byte[] key);
+
+	Object multi();
+
+	Object exec();
 
 	byte[] hget(byte[] key, byte[] field);
 
@@ -33,7 +40,22 @@ public interface RemoteKVSyncClient extends RemoteKVClient {
 
 	Long lpush(byte[] key, byte[]... strings);
 
+	List<byte[]> lrange(byte[] key, int lIndex, int rIndex);
+
+	byte[] lindex(byte[] key, int index);
+
+	byte[] lpop(byte[] key);
+
+	byte[] rpop(byte[] key);
+
+	Long llen(byte[] key);
+
+	String ltrim(byte[] key, int lIndex, int rIndex);
+
 	void pipelineHSet(byte[] key, byte[] field, byte[] value);
 
 	void pipelineHDel(byte[] key, byte[] field);
+
+	@Nullable
+	Object getAndSet(byte[] key, byte[]value);
 }

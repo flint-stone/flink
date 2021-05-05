@@ -132,4 +132,34 @@ public final class PartitionableListState<S> implements ListState<S> {
 			internalList.addAll(values);
 		}
 	}
+
+	@Override
+	public S getIndex(int index) throws Exception {
+		return internalList.get(index);
+	}
+
+	@Override
+	public S pollFirst() throws Exception {
+		return internalList.remove(0);
+	}
+
+	@Override
+	public S pollLast() throws Exception {
+		return internalList.remove(-1);
+	}
+
+	@Override
+	public void trim(int start, int end) throws Exception {
+		for(int i = 0; i <= start; i++){
+			internalList.remove(i);
+		}
+		for(int i = end + 1; i< internalList.size(); i++){
+			internalList.remove(i);
+		}
+	}
+
+	@Override
+	public Long size() {
+		return (long)internalList.size();
+	}
 }

@@ -4,18 +4,20 @@ import io.lettuce.core.LettuceFutures;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.RedisURI;
+import io.lettuce.core.TransactionResult;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.codec.ByteArrayCodec;
+import io.lettuce.core.resource.ClientResources;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 
-	private static final Logger LOG = LoggerFactory.getLogger(LettuceClient.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LettuceAsyncClient.class);
 
 	private RedisClient db;
 
@@ -41,6 +43,10 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	private Timer timer;
 
 	public int interval = 500;
+
+	public static LettuceLazyFlushClient Client = new LettuceLazyFlushClient();
+
+	public Boolean initialized = false;
 
 	@Override
 	public byte[] get(byte[] key) {
@@ -63,6 +69,46 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 			CompletableFuture<String> future = commands.set(key, value).toCompletableFuture();
 			commands.flushCommands();
 			return future.get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Long incr(byte[] key) {
+		CompletableFuture<Long> future = commands.incr(key).toCompletableFuture();
+		commands.flushCommands();
+		try {
+			Long value= future.get();
+			LOG.info("incrAsync {} value {}", key, value );
+			return value;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Object multi() {
+		try {
+			return commands.multi().get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Object exec() {
+		try {
+			return commands.exec().get();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -209,6 +255,78 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	}
 
 	@Override
+	public List<byte[]> lrange(byte[] key, int lIndex, int rIndex) {
+		try {
+			return commands.lrange(key, lIndex, rIndex).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] lindex(byte[] key, int index) {
+		try {
+			return commands.lindex(key, index).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] lpop(byte[] key) {
+		try {
+			return commands.lpop(key).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] rpop(byte[] key) {
+		try {
+			return commands.rpop(key).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Long llen(byte[] key) {
+		try {
+			return commands.llen(key).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public String ltrim(byte[] key, int lIndex, int rIndex) {
+		try {
+			return commands.ltrim(key, lIndex, rIndex).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value) {
 		commands.setAutoFlushCommands(false);
 		cachedFutures.add(commands.hset(key, field, value));
@@ -218,6 +336,12 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	public void pipelineHDel(byte[] key, byte[] field) {
 		commands.setAutoFlushCommands(false);
 		cachedFutures.add(commands.hdel(key, field));
+	}
+
+	@Nullable
+	@Override
+	public Object getAndSet(byte[] key, byte[] value) {
+		return null;
 	}
 
 	@Override
@@ -233,22 +357,45 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 
 	@Override
 	public void openDB(String host) {
-		RedisURI redisUri = RedisURI.Builder.redis(host, 6379).withPassword("authentication").build();
-		db = RedisClient.create(redisUri);
-		codec = new ByteArrayCodec();
-		connection = db.connect(codec);
-		commands = connection.async();
-		commands.setAutoFlushCommands(false);
-		Timer timer = new Timer();
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				System.out.println("commands flush " + Thread.currentThread().getName() + " host " + host);
-				commands.flushCommands();
+		synchronized (initialized){
+			if(!initialized) {
+				RedisURI redisUri = RedisURI.Builder
+					.redis(host, 6379)
+					.withPassword("authentication")
+					.build();
+				db = RedisClient.create(redisUri);
+				ClientResources resources = db.getResources();
+				codec = new ByteArrayCodec();
+				connection = db.connect(codec);
+				commands = connection.async();
+				commands.setAutoFlushCommands(false);
+				Timer timer = new Timer();
+				timer.schedule(new TimerTask() {
+					@Override
+					public void run() {
+						System.out.println("commands flush " + Thread.currentThread().getName() +
+							" host " + host +
+							" current queue content " +
+							(resources == null ? "null" : resources
+								.getCommandBuffer()
+								.stream()
+								.map(x -> x.toString())
+								.collect(Collectors.joining(","))));
+						commands.flushCommands();
+					}
+				}, interval, interval);
+				initialized = true;
+				LOG.info(
+					"Connection from Lettuce Lazy Flush Client to Redis Cluster {} successful with interval {}."
+					,
+					host,
+					interval);
 			}
-		}, interval, interval);
-		LOG.info("Connection from Lettuce Lazy Flush Client to Redis Cluster {} successful with interval {}."
-			, host, interval);
+		}
+	}
+
+	public LettuceLazyFlushClient(){
+		LOG.info("Initialize LettuceLazyFlushClient once at tid {}", Thread.currentThread().getName());
 	}
 
 	@Override
@@ -266,6 +413,21 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	@Override
 	public CompletableFuture<String> setAsync(byte[] key, byte[] value) {
 		return commands.set(key, value).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<Long> incrAsync(byte[] key) {
+		return commands.incr(key).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<String> multiAsync() {
+		return commands.multi().toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<TransactionResult> execAsync() {
+		return commands.exec().toCompletableFuture();
 	}
 
 	@Override
@@ -314,5 +476,21 @@ public class LettuceLazyFlushClient implements RemoteKVSyncClient, RemoteKVAsync
 	@Override
 	public CompletableFuture<Long> lpushAsync(byte[] key, byte[]... strings) {
 		return commands.lpush(key, strings).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<List<byte[]>> lrangeAsync(byte[] key, int lIndex, int rIndex) {
+		return commands.lrange(key, lIndex, rIndex).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<String> ltrimAsync(byte[] key, int lIndex, int rIndex) {
+		return commands.ltrim(key, lIndex, rIndex).toCompletableFuture();
+	}
+
+	@Nullable
+	@Override
+	public CompletableFuture<String> getAndSetAsync(byte[] key, byte[] value) {
+		return null;
 	}
 }

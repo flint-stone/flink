@@ -194,21 +194,26 @@ public class RemoteHeapRestoreOperation<K> implements RestoreOperation<Void> {
 			}
 		}
 
-		LOG.trace("RemoteHeapRestoreOperation: Start Jedis to server: {} lazyFlush {}",
+		LOG.trace("RemoteHeapRestoreOperation: Start Redis client to server: {} lazyFlush {}",
 			remoteStorageHost, lazyFlush);
 		if(lazyFlush){
 			// open DB
-			syncDBClient = new LettuceLazyFlushClient();
+			syncDBClient = LettuceLazyFlushClient.Client; //new LettuceLazyFlushClient();
 			((LettuceLazyFlushClient)syncDBClient).interval = interval;
 			syncDBClient.openDB(remoteStorageHost);
-			asyncDBClient = (RemoteKVAsyncClient) syncDBClient;
+			asyncDBClient = new LettuceLazyFlushClient(); //(RemoteKVAsyncClient) syncDBClient;
+			asyncDBClient.openDB(remoteStorageHost);
 		}
 		else{
 			// open DB
-			syncDBClient = new LettuceClient();//new JedisSyncClient(); //new LettuceClient();
+//			if(LettuceSyncClient.Client == null) LettuceSyncClient.Client = new LettuceSyncClient();
+			syncDBClient = LettuceSyncClient.Client; //new LettuceSyncClient(); //new LettuceAsyncClient();//new JedisSyncClient(); //new LettuceClient();
+//			if(!((LettuceSyncClient) syncDBClient).initialized){
+//				syncDBClient.openDB(remoteStorageHost);
+//			}
 			syncDBClient.openDB(remoteStorageHost);
-			asyncDBClient = (RemoteKVAsyncClient) syncDBClient;//new LettuceClient(); //LettuceOperationUtils.openDB(remoteStorageHost);
-			//asyncDBClient.openDB(remoteStorageHost);
+			asyncDBClient = new LettuceAsyncClient(); //(RemoteKVAsyncClient) new LettuceAsyncClient(); //LettuceOperationUtils.openDB(remoteStorageHost);
+			asyncDBClient.openDB(remoteStorageHost);
 		}
 
 		return null;

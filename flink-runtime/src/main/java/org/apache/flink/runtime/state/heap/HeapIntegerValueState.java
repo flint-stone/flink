@@ -22,23 +22,20 @@ import org.apache.flink.api.common.state.State;
 import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.runtime.state.internal.InternalValueState;
+import org.apache.flink.runtime.state.internal.InternalIntegerValueState;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
 
 /**
  * Heap-backed partitioned {@link ValueState} that is snapshotted into files.
  *
  * @param <K> The type of the key.
  * @param <N> The type of the namespace.
- * @param <V> The type of the value.
  */
-class HeapValueState<K, N, V>
-	extends AbstractHeapState<K, N, V>
-	implements InternalValueState<K, N, V> {
+class HeapIntegerValueState<K, N>
+	extends AbstractHeapState<K, N, Long>
+	implements InternalIntegerValueState<K, N> {
 
-	private static final Logger LOG = LoggerFactory.getLogger(HeapValueState.class);
 	/**
 	 * Creates a new key/value state for the given hash map of key/value pairs.
 	 *
@@ -48,16 +45,13 @@ class HeapValueState<K, N, V>
 	 * @param namespaceSerializer The serializer for the namespace.
 	 * @param defaultValue The default value for the state.
 	 */
-	private HeapValueState(
-		StateTable<K, N, V> stateTable,
+	private HeapIntegerValueState(
+		StateTable<K, N, Long> stateTable,
 		TypeSerializer<K> keySerializer,
-		TypeSerializer<V> valueSerializer,
+		TypeSerializer<Long> valueSerializer,
 		TypeSerializer<N> namespaceSerializer,
-		V defaultValue) {
+		Long defaultValue) {
 		super(stateTable, keySerializer, valueSerializer, namespaceSerializer, defaultValue);
-		LOG.debug(
-			"HeapValueState create state  namespace {} thread {}",
-			currentNamespace, Thread.currentThread().getName());
 	}
 
 	@Override
@@ -71,13 +65,13 @@ class HeapValueState<K, N, V>
 	}
 
 	@Override
-	public TypeSerializer<V> getValueSerializer() {
+	public TypeSerializer<Long> getValueSerializer() {
 		return valueSerializer;
 	}
 
 	@Override
-	public V value() {
-		final V result = stateTable.get(currentNamespace);
+	public Long value() {
+		final Long result = stateTable.get(currentNamespace);
 
 		if (result == null) {
 			return getDefaultValue();
@@ -86,9 +80,18 @@ class HeapValueState<K, N, V>
 		return result;
 	}
 
+	/**
+	 * Updates the operator state accessible by {@link #value()} to the given
+	 * value. The next time {@link #value()} is called (for the same state
+	 * partition) the returned state will represent the updated value. When a
+	 * partitioned state is updated with null, the state for the current key
+	 * will be removed and the default value is returned on the next access.
+	 *
+	 * @param value The new value for the state.
+	 * @throws IOException Thrown if the system cannot access the state.
+	 */
 	@Override
-	public void update(V value) {
-
+	public void update(Long value) throws IOException {
 		if (value == null) {
 			clear();
 			return;
@@ -97,16 +100,28 @@ class HeapValueState<K, N, V>
 		stateTable.put(currentNamespace, value);
 	}
 
+	@Override
+	public Long incr() {
+		Long result = stateTable.get(currentNamespace);
+
+		if (result == null) {
+			result = getDefaultValue();
+		}
+		result++;
+		stateTable.put(currentNamespace, result);
+		return result;
+	}
+
 	@SuppressWarnings("unchecked")
 	static <K, N, SV, S extends State, IS extends S> IS create(
 		StateDescriptor<S, SV> stateDesc,
 		StateTable<K, N, SV> stateTable,
 		TypeSerializer<K> keySerializer) {
-		return (IS) new HeapValueState<>(
-			stateTable,
+		return (IS) new HeapIntegerValueState<K, N>(
+			(StateTable<K, N, Long>)stateTable,
 			keySerializer,
-			stateTable.getStateSerializer(),
+			(TypeSerializer<Long>)stateTable.getStateSerializer(),
 			stateTable.getNamespaceSerializer(),
-			stateDesc.getDefaultValue());
+			(Long)stateDesc.getDefaultValue());
 	}
 }

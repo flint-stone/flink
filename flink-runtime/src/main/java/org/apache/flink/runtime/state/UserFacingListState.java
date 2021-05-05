@@ -19,6 +19,7 @@
 package org.apache.flink.runtime.state;
 
 import org.apache.flink.api.common.state.ListState;
+import org.apache.flink.util.FlinkRuntimeException;
 
 import java.util.Collections;
 import java.util.List;
@@ -64,5 +65,30 @@ class UserFacingListState<T> implements ListState<T> {
 	@Override
 	public void addAll(List<T> values) throws Exception {
 		originalState.addAll(values);
+	}
+
+	@Override
+	public T getIndex(int index) throws Exception {
+		return originalState.getIndex(index);
+	}
+
+	@Override
+	public T pollFirst() throws Exception {
+		return originalState.pollFirst();
+	}
+
+	@Override
+	public T pollLast() throws Exception {
+		return originalState.pollLast();
+	}
+
+	@Override
+	public void trim(int start, int end) throws Exception {
+		originalState.trim(start, end);
+	}
+
+	@Override
+	public Long size() throws Exception {
+		return originalState.size();
 	}
 }

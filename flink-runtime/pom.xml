@@ -333,7 +333,7 @@ under the License.
 		<dependency>
 			<groupId>io.lettuce</groupId>
 			<artifactId>lettuce-core</artifactId>
-			<version>6.0.2.RELEASE</version>
+			<version>6.1.0-BUILD-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 

@@ -62,6 +62,7 @@ import org.apache.flink.streaming.util.MockStreamingRuntimeContext;
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkException;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.SerializedValue;
@@ -1297,6 +1298,36 @@ public class FlinkKafkaConsumerBaseTest extends TestLogger {
 
 				list.addAll(values);
 			}
+		}
+
+		@Override
+		public T getIndex(int index) throws Exception {
+			return list.get(index);
+		}
+
+		@Override
+		public T pollFirst() throws Exception {
+			return list.remove(0);
+		}
+
+		@Override
+		public T pollLast() throws Exception {
+			return list.remove(-1);
+		}
+
+		@Override
+		public void trim(int start, int end) throws Exception {
+			for(int i = 0; i <= start; i++){
+				list.remove(i);
+			}
+			for(int i = end + 1; i< list.size(); i++){
+				list.remove(i);
+			}
+		}
+
+		@Override
+		public Long size() throws Exception {
+			return (long)list.size();
 		}
 	}
 

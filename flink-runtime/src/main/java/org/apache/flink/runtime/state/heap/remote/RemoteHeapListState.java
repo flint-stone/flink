@@ -29,6 +29,9 @@ import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,10 +51,7 @@ class RemoteHeapListState<K, N, V>
 	/** Serializer for the values. */
 	private final TypeSerializer<V> elementSerializer;
 
-	/**
-	 * Separator of StringAppendTestOperator in RocksDB.
-	 */
-	private static final byte DELIMITER = ',';
+	private static final Logger LOG = LoggerFactory.getLogger(RemoteHeapListState.class);
 
 	/**
 	 * Creates a new key/value state for the given hash map of key/value pairs.
@@ -80,6 +80,10 @@ class RemoteHeapListState<K, N, V>
 
 		ListSerializer<V> castedListSerializer = (ListSerializer<V>) valueSerializer;
 		this.elementSerializer = castedListSerializer.getElementSerializer();
+		LOG.debug(
+			"RemoteHeapListState initialize with namespace {} tid {}",
+			currentNamespace,
+			Thread.currentThread().getName());
 	}
 
 	@Override
@@ -118,6 +122,10 @@ class RemoteHeapListState<K, N, V>
 	 */
 	@Override
 	public Iterable<V> get() throws Exception {
+		LOG.debug(
+			"RemoteHeapListState get namespace {} key {} tid {}",
+			currentNamespace,
+			backend.getCurrentKey(), Thread.currentThread().getName());
 		return getInternal();
 	}
 
@@ -131,11 +139,33 @@ class RemoteHeapListState<K, N, V>
 	public List<V> getInternal() {
 		try {
 			byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
-			byte[] valueBytes = backend.syncRemClient.get(key);
-			return deserializeList(valueBytes);
+			List<byte[]> valueBytes = backend.syncRemClient.lrange(key, 0, -1);
+			return deserializeListByItem(valueBytes);
 		} catch (Exception e) {
 			throw new FlinkRuntimeException("Error while retrieving data from remote heap", e);
 		}
+	}
+
+	private List<V> deserializeListByItem(
+		List<byte[]> valueBytesList) {
+		if (valueBytesList == null) {
+			return null;
+		}
+
+
+		List<V> result = new ArrayList<>();
+
+		for (byte[] valueBytes : valueBytesList){
+			dataInputView.setBuffer(valueBytes);
+			try {
+				V value = elementSerializer.deserialize(dataInputView);
+				result.add(value);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return result;
 	}
 
 	private List<V> deserializeList(
@@ -174,7 +204,6 @@ class RemoteHeapListState<K, N, V>
 	@Override
 	public void add(V value) {
 		Preconditions.checkNotNull(value, "You cannot add null to a ListState.");
-
 		try {
 			backend.syncRemClient.rpush(
 				serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
@@ -244,17 +273,16 @@ class RemoteHeapListState<K, N, V>
 	@Override
 	public void updateInternal(List<V> valueToStore) throws Exception {
 		Preconditions.checkNotNull(valueToStore, "List of values to add cannot be null.");
-
-		if (!valueToStore.isEmpty()) {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		backend.syncRemClient.del(key);
+		for (V value : valueToStore) {
 			try {
-				backend.syncRemClient.lpush(
-					serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
-					serializeValueList(valueToStore, elementSerializer, DELIMITER));
+				backend.syncRemClient.rpush(
+					key,serializeValue(value, elementSerializer));
+					//serializeValueList(valueToStore, elementSerializer, DELIMITER));
 			} catch (Exception e) {
 				throw new FlinkRuntimeException("Error while updating data to REM", e);
 			}
-		} else {
-			clear();
 		}
 	}
 
@@ -264,13 +292,76 @@ class RemoteHeapListState<K, N, V>
 
 		if (!values.isEmpty()) {
 			try {
+				byte[][] serializedValues = new byte[values.size()][];
+				for (int i=0; i < values.size(); i++){
+					serializedValues[i] = serializeValue(values.get(i), elementSerializer);
+				}
+
 				backend.syncRemClient.rpush(
 					serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes),
-					serializeValueList(values, elementSerializer, DELIMITER));
+					serializedValues);
 			} catch (Exception e) {
 				throw new FlinkRuntimeException("Error while updating data to remote heap", e);
 			}
 		}
+	}
+
+	@Override
+	public V getIndex(int index) throws Exception {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		byte[] valueBytes = backend.syncRemClient.lindex(key, index);
+		if (valueBytes == null) return null;
+		dataInputView.setBuffer(valueBytes);
+		V value = null;
+		try {
+			value = elementSerializer.deserialize(dataInputView);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return value;
+	}
+
+	@Override
+	public V pollFirst() throws Exception {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		byte[] valueBytes = backend.syncRemClient.lpop(key);
+		if (valueBytes == null) return null;
+		dataInputView.setBuffer(valueBytes);
+		V value = null;
+		try {
+			value = elementSerializer.deserialize(dataInputView);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return value;
+	}
+
+	@Override
+	public V pollLast() throws Exception {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		byte[] valueBytes = backend.syncRemClient.rpop(key);
+		if (valueBytes == null) return null;
+		dataInputView.setBuffer(valueBytes);
+		V value = null;
+		try {
+			value = elementSerializer.deserialize(dataInputView);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return value;
+	}
+
+	@Override
+	public void trim(int start, int end) throws Exception {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		if(start < end) return;
+		String ret = backend.syncRemClient.ltrim(key, start, end);
+	}
+
+	@Override
+	public Long size() throws Exception {
+		byte[] key = serializeCurrentKeyWithGroupAndNamespaceDesc(kvStateInfo.nameBytes);
+		return backend.syncRemClient.llen(key);
 	}
 
 	@SuppressWarnings("unchecked")

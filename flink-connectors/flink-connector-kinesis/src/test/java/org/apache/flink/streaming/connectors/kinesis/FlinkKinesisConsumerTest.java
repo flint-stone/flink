@@ -59,6 +59,7 @@ import org.apache.flink.streaming.connectors.kinesis.util.RecordEmitter;
 import org.apache.flink.streaming.connectors.kinesis.util.WatermarkTracker;
 import org.apache.flink.streaming.util.AbstractStreamOperatorTestHarness;
 import org.apache.flink.streaming.util.CollectingSourceContext;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.TestLogger;
 
 import org.apache.flink.shaded.guava18.com.google.common.collect.Lists;
@@ -648,6 +649,36 @@ public class FlinkKinesisConsumerTest extends TestLogger {
 			if (values != null) {
 				list.addAll(values);
 			}
+		}
+
+		@Override
+		public T getIndex(int index) throws Exception {
+			return list.get(index);
+		}
+
+		@Override
+		public T pollFirst() throws Exception {
+			return list.remove(0);
+		}
+
+		@Override
+		public T pollLast() throws Exception {
+			return list.remove(-1);
+		}
+
+		@Override
+		public void trim(int start, int end) throws Exception {
+			for(int i = 0; i <= start; i++){
+				list.remove(i);
+			}
+			for(int i = end + 1; i< list.size(); i++){
+				list.remove(i);
+			}
+		}
+
+		@Override
+		public Long size() throws Exception {
+			return (long)list.size();
 		}
 	}
 

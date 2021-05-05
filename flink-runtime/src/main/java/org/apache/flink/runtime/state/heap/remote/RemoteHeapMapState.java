@@ -87,7 +87,9 @@ class RemoteHeapMapState<K, N, UK, UV>
 		Preconditions.checkState(
 			valueSerializer instanceof MapSerializer,
 			"Unexpected serializer type.");
-
+		LOG.debug(
+			"RemoteHeapMapState create state  namespace {} thread {}",
+			currentNamespace, Thread.currentThread().getName());
 		MapSerializer<UK, UV> castedMapSerializer = (MapSerializer<UK, UV>) valueSerializer;
 		this.userKeySerializer = castedMapSerializer.getKeySerializer();
 		this.userValueSerializer = castedMapSerializer.getValueSerializer();
@@ -118,11 +120,6 @@ class RemoteHeapMapState<K, N, UK, UV>
 			dataInputView,
 			rawValueBytes,
 			userValueSerializer));
-		LOG.trace(
-			"RemoteHeapMapState retrieve value state {} userKey {} namespace {}",
-			value,
-			userKey,
-			currentNamespace);
 		return value;
 	}
 
@@ -132,11 +129,6 @@ class RemoteHeapMapState<K, N, UK, UV>
 			userKey,
 			userKeySerializer);
 		byte[] rawValueBytes = serializeValueNullSensitive(userValue, userValueSerializer);
-		LOG.trace(
-			"RemoteHeapMapState put value state {} userKey {} namespace {}",
-			userValue,
-			userKey,
-			currentNamespace);
 		backend.syncRemClient.hset(kvStateInfo.nameBytes, rawKeyBytes, rawValueBytes);
 	}
 

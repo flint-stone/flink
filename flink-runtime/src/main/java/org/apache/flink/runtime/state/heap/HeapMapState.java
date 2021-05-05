@@ -28,6 +28,9 @@ import org.apache.flink.queryablestate.client.state.serialization.KvStateSeriali
 import org.apache.flink.runtime.state.internal.InternalMapState;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -45,6 +48,8 @@ class HeapMapState<K, N, UK, UV>
 	extends AbstractHeapState<K, N, Map<UK, UV>>
 	implements InternalMapState<K, N, UK, UV> {
 
+	private static final Logger LOG = LoggerFactory.getLogger(HeapMapState.class);
+
 	/**
 	 * Creates a new key/value state for the given hash map of key/value pairs.
 	 *
@@ -61,7 +66,9 @@ class HeapMapState<K, N, UK, UV>
 		TypeSerializer<N> namespaceSerializer,
 		Map<UK, UV> defaultValue) {
 		super(stateTable, keySerializer, valueSerializer, namespaceSerializer, defaultValue);
-
+		LOG.debug(
+			"HeapMapState create state  namespace {} thread {}",
+			currentNamespace, Thread.currentThread().getName());
 		Preconditions.checkState(valueSerializer instanceof MapSerializer, "Unexpected serializer type.");
 	}
 
@@ -88,8 +95,9 @@ class HeapMapState<K, N, UK, UV>
 		if (userMap == null) {
 			return null;
 		}
+		UV value = userMap.get(userKey);
 
-		return userMap.get(userKey);
+		return value;
 	}
 
 	@Override
@@ -120,6 +128,10 @@ class HeapMapState<K, N, UK, UV>
 	@Override
 	public void remove(UK userKey) {
 
+		LOG.debug(
+			"HeapMapState remove user key {}  namespace {}",
+			userKey,
+			currentNamespace);
 		Map<UK, UV> userMap = stateTable.get(currentNamespace);
 		if (userMap == null) {
 			return;

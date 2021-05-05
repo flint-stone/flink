@@ -29,6 +29,9 @@ import org.apache.flink.queryablestate.client.state.serialization.KvStateSeriali
 import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +46,7 @@ import java.util.List;
 class HeapListState<K, N, V>
 	extends AbstractHeapMergingState<K, N, V, List<V>, Iterable<V>>
 	implements InternalListState<K, N, V> {
+	private static final Logger LOG = LoggerFactory.getLogger(HeapListState.class);
 	/**
 	 * Creates a new key/value state for the given hash map of key/value pairs.
 	 *
@@ -59,6 +63,9 @@ class HeapListState<K, N, V>
 		TypeSerializer<N> namespaceSerializer,
 		List<V> defaultValue) {
 		super(stateTable, keySerializer, valueSerializer, namespaceSerializer, defaultValue);
+		LOG.debug(
+			"HeapListState create state  namespace {} thread {}",
+			currentNamespace, Thread.currentThread().getName());
 	}
 
 	@Override
@@ -82,7 +89,8 @@ class HeapListState<K, N, V>
 
 	@Override
 	public Iterable<V> get() {
-		return getInternal();
+		Iterable<V> ret = getInternal();
+		return ret;
 	}
 
 	@Override
@@ -98,6 +106,7 @@ class HeapListState<K, N, V>
 			list = new ArrayList<>();
 			map.put(namespace, list);
 		}
+
 		list.add(value);
 	}
 
@@ -183,6 +192,38 @@ class HeapListState<K, N, V>
 				return previousState;
 			});
 		}
+	}
+
+	@Override
+	public V getIndex(int index) throws Exception {
+		List<V> ret = stateTable.get(currentNamespace);
+		if(ret== null) return null;
+		return ret.get(index);
+	}
+
+	@Override
+	public V pollFirst() throws Exception {
+		List<V> ret = stateTable.get(currentNamespace);
+		if(ret == null) return null;
+		return ret.remove(0);
+	}
+
+	@Override
+	public V pollLast() throws Exception {
+		List<V> ret = stateTable.get(currentNamespace);
+		if(ret == null) return null;
+		return ret.remove(ret.size() -1);
+	}
+
+	@Override
+	public void trim(int start, int end) throws Exception {
+		List<V> ret = stateTable.get(currentNamespace).subList(start, end + 1);
+		update(ret);
+	}
+
+	@Override
+	public Long size() {
+		return (long)stateTable.get(currentNamespace).size();
 	}
 
 	@SuppressWarnings("unchecked")

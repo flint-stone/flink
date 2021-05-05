@@ -46,6 +46,32 @@ class MockInternalListState<K, N, T>
 	}
 
 	@Override
+	public T getIndex(int index) throws Exception {
+		return getInternal().get(index);
+	}
+
+	@Override
+	public T pollFirst() throws Exception {
+		return getInternal().remove(0);
+	}
+
+	@Override
+	public T pollLast() throws Exception {
+		int size =  getInternal().size();
+		return getInternal().remove(size-1);
+	}
+
+	@Override
+	public void trim(int start, int end) throws Exception {
+		update(getInternal().subList(start, end + 1));
+	}
+
+	@Override
+	public Long size() {
+		return (long)getInternal().size();
+	}
+
+	@Override
 	List<T> mergeState(List<T> acc, List<T> nAcc) {
 		acc = new ArrayList<>(acc);
 		acc.addAll(nAcc);

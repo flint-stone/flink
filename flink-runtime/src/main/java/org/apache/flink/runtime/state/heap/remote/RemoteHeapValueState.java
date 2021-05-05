@@ -52,7 +52,7 @@ class RemoteHeapValueState<K, N, V>
 	 * @param defaultValue The default value for the state.
 	 * @param backend KeyBackend
 	 */
-	private RemoteHeapValueState(
+	protected RemoteHeapValueState(
 		TypeSerializer<K> keySerializer,
 		TypeSerializer<V> valueSerializer,
 		TypeSerializer<N> namespaceSerializer,

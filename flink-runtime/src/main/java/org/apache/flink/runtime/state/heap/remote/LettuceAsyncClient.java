@@ -4,6 +4,7 @@ import io.lettuce.core.LettuceFutures;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.RedisURI;
+import io.lettuce.core.TransactionResult;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.codec.ByteArrayCodec;
@@ -12,19 +13,19 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
+public class LettuceAsyncClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 
-	private static final Logger LOG = LoggerFactory.getLogger(LettuceClient.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LettuceAsyncClient.class);
 
 	private RedisClient db;
 
@@ -36,10 +37,17 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 
 	private ByteArrayCodec codec;
 
+	public static LettuceAsyncClient Client = new LettuceAsyncClient();
+
+	public Boolean initialized = false;
+
 	@Override
 	public byte[] get(byte[] key) {
 		try {
-			return commands.get(key).toCompletableFuture().get();
+			CompletableFuture<byte[]> future = commands.get(key).toCompletableFuture();
+			commands.flushCommands();
+			byte[] ret = future.get();
+			return ret;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -52,7 +60,46 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	@Override
 	public Object set(byte[] key, byte[] value) {
 		try {
-			return commands.set(key, value).toCompletableFuture().get();
+			String ret = commands.set(key, value).toCompletableFuture().get();
+			return ret;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Long incr(byte[] key) {
+		try {
+			return commands.incr(key).toCompletableFuture().get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Object multi() {
+		try {
+			String ret = commands.multi().get();
+			return ret;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Object exec() {
+		try {
+			TransactionResult ret = commands.exec().get();
+			return ret;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -199,6 +246,78 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	}
 
 	@Override
+	public List<byte[]> lrange(byte[] key, int lIndex, int rIndex) {
+		try {
+			return commands.lrange(key, lIndex, rIndex).toCompletableFuture().get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] lindex(byte[] key, int index) {
+		try {
+			return commands.lindex(key, index).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] lpop(byte[] key) {
+		try {
+			return commands.lpop(key).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] rpop(byte[] key) {
+		try {
+			return commands.rpop(key).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Long llen(byte[] key) {
+		try {
+			return commands.llen(key).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public String ltrim(byte[] key, int lIndex, int rIndex) {
+		try {
+			return commands.ltrim(key, lIndex, rIndex).get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
 	public void pipelineHSet(byte[] key, byte[] field, byte[] value) {
 		commands.setAutoFlushCommands(false);
 		cachedFutures.add(commands.hset(key, field, value));
@@ -208,6 +327,12 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	public void pipelineHDel(byte[] key, byte[] field) {
 		commands.setAutoFlushCommands(false);
 		cachedFutures.add(commands.hdel(key, field));
+	}
+
+	@Nullable
+	@Override
+	public Object getAndSet(byte[] key, byte[] value) {
+		return null;
 	}
 
 	@Override
@@ -223,12 +348,24 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 
 	@Override
 	public void openDB(String host) {
-		RedisURI redisUri = RedisURI.Builder.redis(host, 6379).withPassword("authentication").build();
-		db = RedisClient.create(redisUri);
-		codec = new ByteArrayCodec();
-		connection = db.connect(codec);
-		commands = connection.async();
-		LOG.info("Connection from Lettuce Client to Redis Cluster {} successful.", host);
+		synchronized (initialized){
+			if(!initialized) {
+				RedisURI redisUri = RedisURI.Builder
+					.redis(host, 6379)
+					.withPassword("authentication")
+					.build();
+				db = RedisClient.create(redisUri);
+				codec = new ByteArrayCodec();
+				connection = db.connect(codec);
+				commands = connection.async();
+				initialized = true;
+				LOG.info("Connection from Lettuce Client to Redis Cluster {} successful.", host);
+			}
+		}
+	}
+
+	public LettuceAsyncClient(){
+		LOG.info("Initialize LettuceAsyncClient once at tid {}", Thread.currentThread().getName());
 	}
 
 	@Override
@@ -245,6 +382,21 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	@Override
 	public CompletableFuture<String> setAsync(byte[] key, byte[] value) {
 		return commands.set(key, value).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<Long> incrAsync(byte[] key) {
+		return commands.incr(key).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<String> multiAsync() {
+		return commands.multi().toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<TransactionResult> execAsync() {
+		return commands.exec().toCompletableFuture();
 	}
 
 	@Override
@@ -293,5 +445,22 @@ public class LettuceClient implements RemoteKVSyncClient, RemoteKVAsyncClient {
 	@Override
 	public CompletableFuture<Long> lpushAsync(byte[] key, byte[]... strings) {
 		return commands.lpush(key, strings).toCompletableFuture();
+	}
+
+
+	@Override
+	public CompletableFuture<List<byte[]>> lrangeAsync(byte[] key, int lIndex, int rIndex) {
+		return commands.lrange(key, lIndex, rIndex).toCompletableFuture();
+	}
+
+	@Override
+	public CompletableFuture<String> ltrimAsync(byte[] key, int lIndex, int rIndex) {
+		return commands.ltrim(key, lIndex, rIndex).toCompletableFuture();
+	}
+
+	@Nullable
+	@Override
+	public CompletableFuture<String> getAndSetAsync(byte[] key, byte[] value) {
+		return null;
 	}
 }
