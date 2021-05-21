@@ -30,14 +30,14 @@ import org.apache.flink.util.Preconditions;
  * @param <T> Type of the elements in the Stream being partitioned
  */
 @Internal
-public class KeyGroupStreamPartitioner<T, K> extends StreamPartitioner<T> implements ConfigurableStreamPartitioner {
+public class FixedDestinationStreamPartitioner<T, K> extends StreamPartitioner<T> implements ConfigurableStreamPartitioner {
 	private static final long serialVersionUID = 1L;
 
 	private final KeySelector<T, K> keySelector;
 
 	private int maxParallelism;
 
-	public KeyGroupStreamPartitioner(KeySelector<T, K> keySelector, int maxParallelism) {
+	public FixedDestinationStreamPartitioner(KeySelector<T, K> keySelector, int maxParallelism) {
 		Preconditions.checkArgument(maxParallelism > 0, "Number of key-groups must be > 0!");
 		this.keySelector = Preconditions.checkNotNull(keySelector);
 		this.maxParallelism = maxParallelism;
@@ -52,11 +52,13 @@ public class KeyGroupStreamPartitioner<T, K> extends StreamPartitioner<T> implem
 		K key;
 		try {
 			key = keySelector.getKey(record.getInstance().getValue());
+
 		} catch (Exception e) {
 			throw new RuntimeException("Could not extract key from " + record.getInstance().getValue(), e);
 		}
-		int channel = KeyGroupRangeAssignment.assignKeyToParallelOperator(key, maxParallelism, numberOfChannels);
-		System.out.println("KeyGroupStreamPartitioner select Channel " + channel + " key selected " + key + " selector " + keySelector);
+		//int channel = KeyGroupRangeAssignment.assignKeyToParallelOperator(key, maxParallelism, numberOfChannels);
+		int channel = Integer.parseInt((String)key);
+		System.out.println("FixedDestinationStreamPartitioner select Channel " + channel + " key selected " + key + " selector " + keySelector);
 		return channel;
 	}
 
