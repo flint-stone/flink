@@ -59,7 +59,8 @@ public final class KeyGroupRangeAssignment {
 	 */
 	public static int assignToKeyGroup(Object key, int maxParallelism) {
 		Preconditions.checkNotNull(key, "Assigned key must not be null!");
-		return computeKeyGroupForKeyHash(key.hashCode(), maxParallelism);
+		//return computeKeyGroupForKeyHash(key.hashCode(), maxParallelism);
+		return Integer.parseInt((String)key);
 	}
 
 	/**

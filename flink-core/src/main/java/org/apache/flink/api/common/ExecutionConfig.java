@@ -171,6 +171,8 @@ public class ExecutionConfig implements Serializable, Archiveable<ArchivedExecut
 
 	private boolean useDynamicPartitioning = false;
 
+	private boolean fixedDestinationPartitioning = false;
+
 	private long dispatchRebalanceEventInterval = 0;
 
 	// ------------------------------- User code values --------------------------------------------
@@ -984,6 +986,14 @@ public class ExecutionConfig implements Serializable, Archiveable<ArchivedExecut
 		this.failTaskOnCheckpointError = failTaskOnCheckpointError;
 	}
 
+	public void setFixedDestinationPartitioning(boolean fixedDestinationPartitioning) {
+		this.fixedDestinationPartitioning = fixedDestinationPartitioning;
+	}
+
+	public boolean getFixedDestinationPartitioning() {
+		return fixedDestinationPartitioning;
+	}
+
 	public void setUseDynamicPartitioning(boolean useDynamicPartitioning) {
 		this.useDynamicPartitioning = useDynamicPartitioning;
 	}
@@ -1002,6 +1012,10 @@ public class ExecutionConfig implements Serializable, Archiveable<ArchivedExecut
 
 	public boolean isDispatchRebalanceEnabled() {
 		return this.dispatchRebalanceEventInterval > 0 && useDynamicPartitioning;
+	}
+
+	public boolean isFixedDestinationPartitioning(){
+		return this.fixedDestinationPartitioning;
 	}
 
 	@Override
@@ -1031,6 +1045,7 @@ public class ExecutionConfig implements Serializable, Archiveable<ArchivedExecut
 				useSnapshotCompression == other.useSnapshotCompression &&
 				defaultInputDependencyConstraint == other.defaultInputDependencyConstraint &&
 				useDynamicPartitioning == other.useDynamicPartitioning &&
+				fixedDestinationPartitioning == other.fixedDestinationPartitioning &&
 				dispatchRebalanceEventInterval == other.dispatchRebalanceEventInterval;
 		} else {
 			return false;
@@ -1060,6 +1075,7 @@ public class ExecutionConfig implements Serializable, Archiveable<ArchivedExecut
 			useSnapshotCompression,
 			defaultInputDependencyConstraint,
 			useDynamicPartitioning,
+			fixedDestinationPartitioning,
 			dispatchRebalanceEventInterval);
 	}
 
@@ -1096,6 +1112,7 @@ public class ExecutionConfig implements Serializable, Archiveable<ArchivedExecut
 			", registeredKryoTypes=" + registeredKryoTypes +
 			", registeredPojoTypes=" + registeredPojoTypes +
 			", useDynamicPartitioning=" + useDynamicPartitioning +
+			", fixedDestinationPartitioning=" + fixedDestinationPartitioning +
 			", dispatchRebalanceEventInterval=" + dispatchRebalanceEventInterval +
 			'}';
 	}
@@ -1209,6 +1226,8 @@ public class ExecutionConfig implements Serializable, Archiveable<ArchivedExecut
 			.ifPresent(b -> this.forceKryo = b);
 		configuration.getOptional(PipelineOptions.USE_DYNAMIC_PARTITIONING)
 			.ifPresent(this::setUseDynamicPartitioning);
+		configuration.getOptional(PipelineOptions.USE_FIXED_DESTINATION_PARTITIONING)
+			.ifPresent(this::setFixedDestinationPartitioning);
 		configuration.getOptional(PipelineOptions.EVENT_DISPATCHING_INTERVAL)
 			.ifPresent(this::setDispatchRebalanceEventInterval);
 		configuration.getOptional(PipelineOptions.GLOBAL_JOB_PARAMETERS)

@@ -139,6 +139,12 @@ public class PipelineOptions {
 			.defaultValue(false)
 			.withDescription("If enabled, uses dynamic key partitioning using RepartitionTaskEvent");
 
+	public static final ConfigOption<Boolean> USE_FIXED_DESTINATION_PARTITIONING =
+		key("pipeline.use-fix-destination-partitioning")
+			.booleanType()
+			.defaultValue(false)
+			.withDescription("If enabled, uses key should be specified as channel ID");
+
 	public static final ConfigOption<Long> EVENT_DISPATCHING_INTERVAL =
 		key("pipeline.event-dispatching-interval")
 			.defaultValue(0L)
