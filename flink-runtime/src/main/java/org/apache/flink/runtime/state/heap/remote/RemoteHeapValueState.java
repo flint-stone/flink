@@ -121,7 +121,7 @@ class RemoteHeapValueState<K, N, V>
 				currentNamespace,
 				backend.getCurrentKey());
 		} catch (Exception e) {
-			throw new FlinkRuntimeException("Error while adding data to RocksDB", e);
+			throw new FlinkRuntimeException("Error while adding data to Redis", e);
 		}
 	}
 

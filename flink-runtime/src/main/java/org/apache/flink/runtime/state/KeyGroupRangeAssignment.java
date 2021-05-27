@@ -60,7 +60,7 @@ public final class KeyGroupRangeAssignment {
 	public static int assignToKeyGroup(Object key, int maxParallelism) {
 		Preconditions.checkNotNull(key, "Assigned key must not be null!");
 		//return computeKeyGroupForKeyHash(key.hashCode(), maxParallelism);
-		return Integer.parseInt((String)key);
+		return computeIntegerKeyGroupForKeyHash(Integer.parseInt((String)key), maxParallelism);
 	}
 
 	/**
@@ -72,6 +72,10 @@ public final class KeyGroupRangeAssignment {
 	 */
 	public static int computeKeyGroupForKeyHash(int keyHash, int maxParallelism) {
 		return MathUtils.murmurHash(keyHash) % maxParallelism;
+	}
+
+	public static int computeIntegerKeyGroupForKeyHash(int intergerKey, int maxParallelism) {
+		return intergerKey % maxParallelism;
 	}
 
 	/**
@@ -119,6 +123,11 @@ public final class KeyGroupRangeAssignment {
 	public static int computeOperatorIndexForKeyGroup(int maxParallelism, int parallelism, int keyGroupId) {
 		return keyGroupId * parallelism / maxParallelism;
 	}
+
+	public static int computeKeyGroupForOperatorIndex(int maxParallelism, int parallelism, int operatorIndex) {
+		return operatorIndex * maxParallelism / parallelism;
+	}
+
 
 	/**
 	 * Computes a default maximum parallelism from the operator parallelism. This is used in case the user has not
