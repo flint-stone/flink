@@ -56,7 +56,7 @@ public class KeyGroupStreamPartitioner<T, K> extends StreamPartitioner<T> implem
 			throw new RuntimeException("Could not extract key from " + record.getInstance().getValue(), e);
 		}
 		int channel = KeyGroupRangeAssignment.assignKeyToParallelOperator(key, maxParallelism, numberOfChannels);
-		System.out.println("KeyGroupStreamPartitioner select Channel " + channel + " key selected " + key + " selector " + keySelector);
+		//System.out.println("KeyGroupStreamPartitioner select Channel " + channel + " key selected " + key + " selector " + keySelector);
 		return channel;
 	}
 
