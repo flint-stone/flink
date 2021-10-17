@@ -97,12 +97,6 @@ public abstract class StateTable<K, N, S>
 		for (int i = 0; i < this.keyGroupedStateMaps.length; i++) {
 			this.keyGroupedStateMaps[i] = createStateMap();
 		}
-
-//		System.out.println("StateTable initailize " + metaInfo
-//			+" KeyGroupRange " + keyContext.getKeyGroupRange()
-//			+ " keyGroupOffset " + keyGroupOffset
-//			+ " keyContext " + keyContext.getCurrentKey()
-//			+ " num KeyGroups" + keyContext.getNumberOfKeyGroups() );
 	}
 
 	protected abstract StateMap<K, N, S> createStateMap();
@@ -340,7 +334,6 @@ public abstract class StateTable<K, N, S>
 
 	public void put(K key, int keyGroup, N namespace, S state) {
 		checkKeyNamespacePreconditions(key, namespace);
-		// System.out.println("StateTable key " + key + " keyGroup " + keyGroup + " keyGroupOffset " + keyGroupOffset );
 		StateMap<K, N, S> stateMap = getMapForKeyGroup(keyGroup);
 		stateMap.put(key, namespace, state);
 	}
