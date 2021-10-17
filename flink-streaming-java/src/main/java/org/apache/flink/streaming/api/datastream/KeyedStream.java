@@ -70,6 +70,7 @@ import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.api.windowing.windows.Window;
 import org.apache.flink.streaming.runtime.partitioner.DynamicKeyedFixedPartitioner;
+import org.apache.flink.streaming.runtime.partitioner.FixedDestinationStreamPartitioner;
 import org.apache.flink.streaming.runtime.partitioner.KeyGroupStreamPartitioner;
 import org.apache.flink.streaming.runtime.partitioner.StreamPartitioner;
 import org.apache.flink.util.Preconditions;
@@ -135,9 +136,11 @@ public class KeyedStream<T, KEY> extends DataStream<T> {
 			dataStream,
 			new PartitionTransformation<>(
 				dataStream.getTransformation(),
-				dataStream.getExecutionConfig().getUseDynamicPartitioning()?
+				(dataStream.getExecutionConfig().getFixedDestinationPartitioning()?
+					new FixedDestinationStreamPartitioner<>(keySelector, StreamGraphGenerator.DEFAULT_LOWER_BOUND_MAX_PARALLELISM):
+					dataStream.getExecutionConfig().getUseDynamicPartitioning()?
 					new DynamicKeyedFixedPartitioner<>(keySelector, StreamGraphGenerator.DEFAULT_LOWER_BOUND_MAX_PARALLELISM):
-					new KeyGroupStreamPartitioner<>(keySelector, StreamGraphGenerator.DEFAULT_LOWER_BOUND_MAX_PARALLELISM)),
+					new KeyGroupStreamPartitioner<>(keySelector, StreamGraphGenerator.DEFAULT_LOWER_BOUND_MAX_PARALLELISM))),
 			keySelector,
 			keyType);
 	}

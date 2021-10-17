@@ -518,6 +518,6 @@ public class RemoteHeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K>
 	@Override
 	public void setCurrentKey(K newKey) {
 		super.setCurrentKey(newKey);
-		sharedREMKeyBuilder.setKeyAndKeyGroup(getCurrentKey(), getCurrentKeyGroupIndex());
+		//sharedREMKeyBuilder.setKeyAndKeyGroup(getCurrentKey(), getCurrentKeyGroupIndex());
 	}
 }

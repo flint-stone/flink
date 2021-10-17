@@ -178,6 +178,10 @@ under the License.
 					<groupId>com.typesafe</groupId>
 					<artifactId>config</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>org.reactivestreams</groupId>
+					<artifactId>reactive-streams</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 

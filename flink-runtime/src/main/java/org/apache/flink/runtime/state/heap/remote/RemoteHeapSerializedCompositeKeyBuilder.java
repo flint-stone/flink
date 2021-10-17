@@ -206,7 +206,8 @@ public class RemoteHeapSerializedCompositeKeyBuilder<K> {
 	}
 
 	private boolean isKeyWritten() {
-		return afterKeyMark > 0;
+		return true;
+		//return afterKeyMark > 0;
 	}
 
 	@VisibleForTesting

@@ -120,6 +120,11 @@ class RemoteHeapMapState<K, N, UK, UV>
 			dataInputView,
 			rawValueBytes,
 			userValueSerializer));
+		LOG.debug(
+			"RemoteHeapMapState get namespace {} key {} keybytes {} value {} metaInfo {} nameBytes {} tid {}",
+			currentNamespace, backend.getCurrentKey(), rawKeyBytes,
+			value, kvStateInfo.metaInfo,
+			kvStateInfo.nameBytes, Thread.currentThread().getName());
 		return value;
 	}
 
@@ -129,6 +134,11 @@ class RemoteHeapMapState<K, N, UK, UV>
 			userKey,
 			userKeySerializer);
 		byte[] rawValueBytes = serializeValueNullSensitive(userValue, userValueSerializer);
+		LOG.debug(
+			"RemoteHeapMapState put namespace {} key {} userKey {} keybytes {} metaInfo {} nameBytes {} tid {}",
+			currentNamespace, backend.getCurrentKey(), userKey, rawKeyBytes
+			, kvStateInfo.metaInfo,
+			kvStateInfo.nameBytes, Thread.currentThread().getName());
 		backend.syncRemClient.hset(kvStateInfo.nameBytes, rawKeyBytes, rawValueBytes);
 	}
 
