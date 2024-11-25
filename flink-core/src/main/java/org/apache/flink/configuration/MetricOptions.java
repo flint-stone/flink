@@ -169,6 +169,12 @@ public class MetricOptions {
 			"ports to avoid collisions when multiple Flink components are running on the same machine. Per default " +
 			"Flink will pick a random port.");
 
+	@Documentation.Section(Documentation.Sections.COMMON_HOST_PORT)
+	public static final ConfigOption<String> QUERY_SERVICE_HOST =
+		key("metrics.internal.query-service.host")
+			.defaultValue("0.0.0.0")
+			.withDescription("The host used for Flink's internal metric query service.");
+
 	/**
 	 * The thread priority for Flink's internal metric query service. The {@code 1} means the min priority and the
 	 * {@code 10} means the max priority.

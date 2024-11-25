@@ -134,8 +134,9 @@ public class MetricUtils {
 
 	public static RpcService startRemoteMetricsRpcService(Configuration configuration, String hostname) throws Exception {
 		final String portRange = configuration.getString(MetricOptions.QUERY_SERVICE_PORT);
-
-		return startMetricRpcService(configuration, AkkaRpcServiceUtils.remoteServiceBuilder(configuration, hostname, portRange));
+		AkkaRpcServiceUtils.AkkaRpcServiceBuilder builder = AkkaRpcServiceUtils.remoteServiceBuilder(configuration, configuration.getString(MetricOptions.QUERY_SERVICE_HOST), portRange);
+		builder.withBindAddress(configuration.getString(MetricOptions.QUERY_SERVICE_HOST));
+		return startMetricRpcService(configuration, builder);
 	}
 
 	public static RpcService startLocalMetricsRpcService(Configuration configuration) throws Exception {
